@@ -2,258 +2,1019 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SNAPY Member Checker</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Snapy Member Poin</title>
 <style>
+/* Layout: satu kolom alat kasir (maks 760px) — kartu lookup, kartu member bergaya kartu stempel, kartu transaksi, struk "Catat di POS". */
 :root{
-  --bg:#f4f1ea; --card:#ffffff; --ink:#1b1a17; --muted:#6f6a60; --line:#e3ddd0;
-  --accent:#e4572e; --accent-ink:#fff; --ok:#1f8a5b; --ok-bg:#e6f4ec; --warn:#b4471f; --warn-bg:#fbe9e2;
-  --tp:#2c6e9b; --tp-bg:#e3eef6; --pik:#7a4fb0; --pik-bg:#efe7f8;
-  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(40,30,10,.06);
+  --bg:#f6f3f9; --surface:#ffffff; --surface-2:#f1ecf6; --line:#e2d9ec;
+  --ink:#22172e; --muted:#6c5f7a;
+  --brand:#4A2574; --brand-ink:#ffffff; --brand-soft:#ece3f6;
+  --accent:#F2994A; --accent-ink:#3b1f05; --accent-soft:#fdeedf; --hero:#4A2574; --hero-ink:#ffffff;
+  --ok:#1d7a4f; --ok-soft:#e3f4ea; --warn:#b4471f; --warn-soft:#fbe8e0; --info-soft:#eef1fb;
+  --shadow:0 1px 2px rgba(40,20,60,.06),0 6px 20px rgba(40,20,60,.06);
+  --font:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+  --r:14px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#15140f; --card:#1f1d18; --ink:#f1ede4; --muted:#a39d90; --line:#34312a;
-  --accent:#ff6b42; --ok:#5fd09a; --ok-bg:#163326; --warn:#ff9a76; --warn-bg:#3a1f15;
-  --tp:#7cb8e2; --tp-bg:#18303f; --pik:#c4a2ef; --pik-bg:#2c1f3d; --shadow:none;
+  --bg:#15101c; --surface:#1f1829; --surface-2:#271f33; --line:#3a2f48;
+  --ink:#f1ebf7; --muted:#ab9fbb;
+  --brand:#b28ce0; --brand-ink:#1a0f27; --brand-soft:#2e2140;
+  --accent:#F2994A; --accent-ink:#2a1505; --accent-soft:#3a2716; --hero:#3b1d5e; --hero-ink:#f1ebf7;
+  --ok:#5fd09a; --ok-soft:#163327; --warn:#ff9a76; --warn-soft:#3b1f16; --info-soft:#232742;
+  --shadow:none; color-scheme:dark;
 }}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:720px;margin:0 auto;padding:28px 16px 48px}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px}
-.brand{display:flex;align-items:center;gap:10px}
-.logo{width:38px;height:38px;border-radius:10px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:18px}
-.brand b{display:block;font-size:17px;letter-spacing:.02em}
-.brand span{font-size:12.5px;color:var(--muted)}
-.outlets{display:flex;gap:6px;flex-wrap:wrap}
-.pill{font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px}
-.pill.tp{background:var(--tp-bg);color:var(--tp)} .pill.pik{background:var(--pik-bg);color:var(--pik)}
-
-.search{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
-.search label{display:block;font-weight:700;font-size:15px;margin-bottom:4px}
-.search p{margin:0 0 14px;color:var(--muted);font-size:13.5px}
-.row{display:flex;gap:10px}
-.field{flex:1;display:flex;align-items:center;border:2px solid var(--line);border-radius:12px;background:var(--bg);transition:border-color .15s}
-.field:focus-within{border-color:var(--accent)}
-.field svg{margin-left:14px;flex:none;color:var(--muted)}
-.field input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:600 22px "JetBrains Mono",monospace;letter-spacing:.04em;padding:14px 12px;outline:none}
-.field input::placeholder{color:var(--muted);opacity:.55;font-weight:500}
-.btn{border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);font:700 16px inherit;font-family:inherit;padding:0 22px;cursor:pointer}
-.btn:active{transform:translateY(1px)}
-.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:600;font-size:13px;padding:8px 12px}
-.hint{margin-top:10px;font-size:12px;color:var(--muted)}
-kbd{font-family:"JetBrains Mono",monospace;font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 5px}
-
-#result{margin-top:20px}
-.status{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;font-weight:700;font-size:15px;margin-bottom:12px}
-.status.ok{background:var(--ok-bg);color:var(--ok)} .status.no{background:var(--warn-bg);color:var(--warn)}
-.status small{font-weight:500;opacity:.85}
-.member{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow);margin-bottom:12px;}
-.mtop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
-.mname{font-size:24px;font-weight:800;line-height:1.2;margin:0}
-.mcode{font:500 12.5px "JetBrains Mono",monospace;color:var(--muted);margin-top:4px}
-.badge{flex:none;font-size:13px;font-weight:700;padding:7px 12px;border-radius:10px;white-space:nowrap}
-.badge.tp{background:var(--tp-bg);color:var(--tp)} .badge.pik{background:var(--pik-bg);color:var(--pik)} .badge.other{background:var(--line);color:var(--muted)}
-dl{margin:0;display:grid;grid-template-columns:130px 1fr;row-gap:12px;column-gap:16px;border-top:1px dashed var(--line);padding-top:16px}
-dt{color:var(--muted);font-size:13px;font-weight:600;padding-top:2px}
-dd{margin:0;font-size:15.5px;line-height:1.45}
-dd.phone{font:600 18px "JetBrains Mono",monospace;letter-spacing:.03em}
-.empty{text-align:center;color:var(--muted);padding:36px 16px;font-size:14px}
-.empty svg{opacity:.5;margin-bottom:8px}
-
-footer{margin-top:28px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
-#file{display:none}
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:13.5px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none}
-.toast.show{opacity:1}
-@media (max-width:520px){
-  .row{flex-direction:column} .btn{padding:14px} .field input{font-size:19px}
-  dl{grid-template-columns:1fr;row-gap:4px} dd{margin-bottom:10px}
-  .mtop{flex-direction:column} header{flex-direction:column;align-items:flex-start}
+:root[data-theme="dark"]{
+  --bg:#15101c; --surface:#1f1829; --surface-2:#271f33; --line:#3a2f48;
+  --ink:#f1ebf7; --muted:#ab9fbb;
+  --brand:#b28ce0; --brand-ink:#1a0f27; --brand-soft:#2e2140;
+  --accent:#F2994A; --accent-ink:#2a1505; --accent-soft:#3a2716; --hero:#3b1d5e; --hero-ink:#f1ebf7;
+  --ok:#5fd09a; --ok-soft:#163327; --warn:#ff9a76; --warn-soft:#3b1f16; --info-soft:#232742;
+  --shadow:none; color-scheme:dark;
 }
-.pin{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
-.pin label{display:block;font-weight:700;font-size:15px;margin-bottom:4px}
-.pin p{margin:0 0 14px;color:var(--muted);font-size:13.5px}
-.pin .err{color:var(--warn);font-size:13px;font-weight:600;margin-top:10px;min-height:1em}
-.hidden{display:none!important}
-.loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:600;padding:12px 4px}
-.spin{width:18px;height:18px;border:2.5px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.45;margin:0}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--hero);color:var(--hero-ink)}
+.top-in{max-width:760px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.01em;font-size:17px;margin-right:auto}
+.dot{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:13px;font-weight:900}
+.tabs{display:flex;gap:4px}
+.tab{appearance:none;border:0;background:transparent;color:inherit;opacity:.75;font:600 14px var(--font);padding:10px 14px;border-radius:10px;min-height:44px;cursor:pointer}
+.tab[aria-selected="true"]{opacity:1;background:rgba(255,255,255,.16)}
+.who{font-size:12.5px;opacity:.85;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+main{max-width:760px;margin:0 auto;padding-block:16px 48px;padding-inline:16px;display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+main>*,.tabpanel>*{min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);min-width:0}
+.card h2{font-size:16px;margin:0 0 10px;text-wrap:balance}
+.label{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.row>*{min-width:0}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface-2);border:2px solid var(--line);border-radius:12px;padding:12px 14px;min-height:50px;width:100%}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+textarea{min-height:120px;font-family:var(--mono);font-size:13px}
+.big-in{font:700 22px var(--mono);letter-spacing:.03em}
+.grow{flex:1 1 220px}
+.btn{appearance:none;border:0;border-radius:12px;min-height:50px;padding:0 20px;font:700 15px var(--font);cursor:pointer;background:var(--brand);color:var(--brand-ink)}
+.btn.alt{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--brand);border:2px solid var(--line)}
+.btn.danger{background:transparent;color:var(--warn);border:2px solid var(--warn-soft)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{min-height:40px;padding:0 14px;font-size:13.5px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:8px}
+kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px}
+.note{border-radius:12px;padding:12px 14px;font-size:14px}
+.note.ok{background:var(--ok-soft);color:var(--ok)} .note.warn{background:var(--warn-soft);color:var(--warn)}
+.note.info{background:var(--info-soft);color:var(--ink)} .note.accent{background:var(--accent-soft);color:var(--ink)}
+.note b{font-weight:800}
+#banner{display:grid;gap:10px}
+#banner:empty{display:none}
+/* Kartu member: gaya kartu stempel dengan tepi berlubang */
+.member{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.member-top{background:var(--hero);color:var(--hero-ink);padding:16px 18px 18px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.verify{font-size:13px;opacity:.85;margin-bottom:2px}
+.mname{font-size:22px;font-weight:800;margin:0;line-height:1.2;text-wrap:balance}
+.mmeta{font-size:13px;opacity:.85;margin-top:4px;font-variant-numeric:tabular-nums}
+.bal{text-align:right;min-width:120px}
+.bal-n{font:800 44px/1 var(--font);font-variant-numeric:tabular-nums;color:var(--accent)}
+.bal-l{font-size:12px;opacity:.85;letter-spacing:.06em;text-transform:uppercase}
+.perf{height:14px;background:radial-gradient(circle at 7px 0,var(--bg) 6px,transparent 6.5px) repeat-x;background-size:14px 14px}
+.member-body{padding:6px 18px 18px;display:grid;gap:12px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div{background:var(--surface-2);border-radius:10px;padding:10px 12px}
+.kv span{display:block;font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.kv b{font-variant-numeric:tabular-nums}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+td.n,th.n{text-align:right}
+/* Transaksi */
+.pkgs{display:grid;gap:8px}
+.pkg{display:flex;align-items:center;gap:12px;background:var(--surface-2);border-radius:12px;padding:8px 10px 8px 14px}
+.pkg .t{flex:1;min-width:0}
+.pkg .t b{display:block}
+.pkg .t small{color:var(--muted)}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:46px;height:46px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--brand);font:800 20px var(--font);cursor:pointer}
+.step button:disabled{opacity:.35;cursor:not-allowed}
+.step output{min-width:28px;text-align:center;font:800 18px var(--font);font-variant-numeric:tabular-nums}
+.sum{display:grid;gap:6px;background:var(--brand-soft);border-radius:12px;padding:12px 14px;font-variant-numeric:tabular-nums}
+.sum div{display:flex;justify-content:space-between;gap:12px}
+.sum .tot{font-weight:800;font-size:17px;border-top:1px dashed var(--line);padding-top:6px}
+.sum .pts{color:var(--brand);font-weight:800}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+/* Struk Catat di POS */
+.slip{border:2px dashed var(--accent);border-radius:12px;padding:14px;background:var(--accent-soft);display:grid;gap:10px}
+.slip-h{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.code{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.code output{font:800 22px var(--mono);letter-spacing:.04em;background:var(--surface);border-radius:8px;padding:6px 12px;user-select:all}
+.hist .void td{color:var(--muted);text-decoration:line-through}
+.tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--warn-soft);color:var(--warn);text-decoration:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--brand-soft);border-radius:999px;padding:4px 10px;font-size:13px;font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);text-align:center;padding:18px 8px;font-size:14px}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(20,10,30,.55);display:grid;place-items:center;padding:16px}
+.dialog{background:var(--surface);color:var(--ink);border-radius:16px;max-width:460px;width:100%;padding:20px;display:grid;gap:12px;max-height:90vh;overflow:auto}
+.dialog h3{margin:0;font-size:18px}
+.dialog .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.check input{width:24px;height:24px;min-height:0;flex:none;margin-top:1px}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
+.spin{display:inline-block;width:16px;height:16px;border:2.5px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-3px;margin-right:6px}
 @keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+@media (max-width:480px){.bal{text-align:left}.member-top{flex-direction:column}.btn{width:100%}.btn.sm{width:auto}.row .btn{flex:1 1 100%}}
 </style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="brand">
-      <div class="logo">S</div>
-      <div><b>SNAPY Member Checker</b><span>Promo khusus member outlet kami</span></div>
-    </div>
-    <div class="outlets"><span class="pill tp">Taman Palem</span><span class="pill pik">PIK</span></div>
-  </header>
-
-  <div class="pin hidden" id="pinBox">
-    <label for="pin">PIN kasir</label>
-    <p>Masukkan PIN sekali di perangkat ini. Setelah itu kasir cukup ketik nomor HP member.</p>
-    <div class="row">
-      <div class="field">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-        <input id="pin" type="password" inputmode="numeric" placeholder="••••••" autocomplete="off">
-      </div>
-      <button class="btn" type="button" id="pinBtn">Masuk</button>
-    </div>
-    <div class="err" id="pinErr"></div>
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><span class="dot" aria-hidden="true">S</span>Snapy Member Poin</div>
+    <nav class="tabs" role="tablist" id="tabs" hidden>
+      <button class="tab" id="tabBtnKasir" role="tab" aria-selected="true">Kasir</button>
+      <button class="tab" id="tabBtnAdmin" role="tab" aria-selected="false" hidden>Admin</button>
+    </nav>
+    <div class="who" id="who"></div>
+    <button class="tab" id="logoutBtn" type="button" hidden>Keluar</button>
   </div>
+</header>
 
-  <div class="search hidden" id="form">
-    <label for="q">Nomor HP member</label>
-    <p>Ketik nomor yang disebutkan customer. Format 08…, 8…, 62… atau +62… semuanya bisa.</p>
-    <div class="row">
-      <div class="field">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>
-        <input id="q" type="tel" inputmode="tel" placeholder="0812 xxxx xxxx" autocomplete="off">
-      </div>
-      <button class="btn" type="button" id="cekBtn">Cek Member</button>
+<main>
+  <div id="banner" aria-live="polite"></div>
+
+  <section id="loginBox" class="card" hidden>
+    <h2>Masuk kasir</h2>
+    <div style="display:grid;gap:12px">
+      <div><label class="label" for="loginName">Nama kasir</label><input id="loginName" type="text" autocomplete="off" placeholder="Nama Anda (dicatat di setiap transaksi)"></div>
+      <div><label class="label" for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN kasir atau PIN admin"></div>
+      <div class="row"><button class="btn grow" id="loginBtn" type="button">Masuk</button></div>
+      <div id="loginErr" class="hint" style="color:var(--warn);font-weight:600;margin:0"></div>
     </div>
-    <div class="hint"><kbd>Enter</kbd> untuk cek &nbsp;·&nbsp; <kbd>Esc</kbd> untuk kosongkan</div>
-  </div>
+  </section>
 
-  <div id="result"></div>
+  <section id="tabKasir" class="tabpanel" hidden style="display:grid;gap:14px;grid-template-columns:minmax(0,1fr)">
+    <div class="card">
+      <label class="label" for="phone">Nomor HP member</label>
+      <div class="row">
+        <input id="phone" class="big-in grow" type="tel" inputmode="tel" autocomplete="off" placeholder="0812 xxxx xxxx">
+        <button class="btn" id="cekBtn" type="button">Cek</button>
+      </div>
+      <div class="hint"><kbd>Enter</kbd> cek · <kbd>Esc</kbd> kosongkan · format 08…, 8…, 62…, +62… bisa</div>
+    </div>
+    <div id="memberArea"></div>
+    <div id="txArea"></div>
+    <div id="historyArea"></div>
+  </section>
 
-  <footer>
-    <span id="meta"></span>
-    <button class="btn ghost hidden" type="button" id="logoutBtn">Keluar / ganti PIN</button>
-  </footer>
-</div>
-<div class="toast" id="toast"></div>
+  <section id="tabAdmin" class="tabpanel" hidden style="display:grid;gap:14px;grid-template-columns:minmax(0,1fr)">
+    <div class="card">
+      <h2>Data member</h2>
+      <div id="memberStatus" class="note info">Memuat status…</div>
+      <p class="hint">Data member dibaca langsung dari Google Sheet. Untuk memperbarui, tempel data terbaru dari pusat ke sheet member (baris judul tetap di atas). Jangan ubah tab <b>Ledger</b> secara manual.</p>
+      <div class="row"><button class="btn ghost sm" id="statsBtn" type="button">Muat ulang status</button></div>
+    </div>
+    <div class="card">
+      <h2>Rekap bulanan</h2>
+      <div class="row">
+        <input id="repMonth" type="month" class="grow" style="max-width:240px">
+        <button class="btn" id="repBtn" type="button">Hitung rekap</button>
+      </div>
+      <div id="repOut" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h2>Unduh ledger</h2>
+      <p class="hint" style="margin-top:0">Semua baris transaksi poin dari semua outlet, format CSV.</p>
+      <div class="row"><button class="btn ghost" id="dlBtn" type="button">Unduh ledger (CSV)</button></div>
+    </div>
+  </section>
+</main>
+<div id="modal" class="modal" hidden><div class="dialog" id="dialog" role="dialog" aria-modal="true"></div></div>
+<div id="toast" class="toast" hidden></div>
 
 <script>
-// ====== PENGATURAN ======
-// Isi dengan URL Web App dari Google Apps Script (berakhiran /exec)
-const API_URL = "https://script.google.com/macros/s/AKfycbyAF74rkcWCDi8v5t8w0ORGTHFAyTYbHcs6tOu6YZZAFuINuXEtZCyl-RiPa6dmLIU/exec";
-// ========================
-// Halaman ini TIDAK berisi data member. Data diambil satu per satu dari Google Sheet
-// (private) lewat Apps Script, dan hanya bisa diakses dengan PIN kasir.
+/* SnapyCore — logika murni & sinkron untuk program poin member Snapy.
+ * Tidak menyentuh DOM, jaringan, atau db. Halaman memuat dokumen secara async,
+ * menjalankan core pada snapshot, lalu menulis hasilnya. */
+(function (root, factory) {
+  const core = factory();
+  if (typeof module === "object" && module.exports) module.exports = core;
+  else root.SnapyCore = core;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
 
-const PIN_KEY = "snapy_pin_v1";
-const $ = s => document.querySelector(s);
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let PIN = "";
-try { PIN = localStorage.getItem(PIN_KEY) || ""; } catch(_) {}
+  const DEFAULTS = Object.freeze({
+    outlets: ["Cinere", "Taman Palem", "GSB2", "PIK", "Tomang"],
+    // [batas bawah Rp, poin] — urut dari terbesar
+    tiers: [[500000, 75], [200000, 30], [100000, 13], [50000, 6], [25000, 3], [10000, 1]],
+    packages: [
+      { points: 40, discount: 10000 },
+      { points: 100, discount: 25000 },
+      { points: 200, discount: 50000 },
+      { points: 400, discount: 100000 },
+    ],
+    expiryMonths: 12,
+    dupWindowMs: 5 * 60 * 1000,
+    voidWindowMs: 10 * 60 * 1000,
+    bigValue: 2000000,
+    nearGap: 25000,
+    tzOffsetMin: 7 * 60, // Asia/Jakarta, tanpa DST
+  });
 
-function norm(v){
-  let d = String(v ?? "").replace(/\D/g, "");
-  if (d.startsWith("62")) d = d.slice(2);
-  d = d.replace(/^0+/, "");
-  return d ? "0" + d : "";
-}
-function pretty(p){ return String(p).replace(/^(\d{4})(\d{4})(\d+)$/, "$1-$2-$3"); }
-function outletClass(o){
-  const s = String(o || "").toLowerCase();
-  if (s.includes("palem") || s.includes("palen")) return "tp";
-  if (s.includes("pik")) return "pik";
-  return "other";
-}
-function fmtDate(iso){
-  if (!iso) return "-";
-  const d = new Date(iso + "T00:00:00");
-  return isNaN(d) ? iso : d.toLocaleDateString("id-ID", {day:"numeric", month:"long", year:"numeric"});
-}
-function address(a){ return (a || []).filter(Boolean).join(", ") || "-"; }
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
-
-function card(m){
-  const oc = outletClass(m.o);
-  return `<article class="member">
-    <div class="mtop">
-      <div><h2 class="mname">${esc(m.n)}</h2><div class="mcode">${esc(m.k)}</div></div>
-      <span class="badge ${oc}">Outlet ${esc(m.o || "-")}</span>
-    </div>
-    <dl>
-      <dt>Outlet</dt><dd>${esc(m.o || "-")}</dd>
-      <dt>Nama</dt><dd>${esc(m.n)}</dd>
-      <dt>Nomor HP</dt><dd class="phone">${esc(pretty(m.p))}</dd>
-      <dt>Alamat</dt><dd>${esc(address(m.a))}</dd>
-      <dt>Member sejak</dt><dd>${esc(fmtDate(m.j))}</dd>
-    </dl>
-  </article>`;
-}
-
-async function api(params){
-  const url = API_URL + "?" + new URLSearchParams(params).toString();
-  const r = await fetch(url, {method:"GET", redirect:"follow"});
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  return r.json();
-}
-
-function showPin(msg){
-  $("#pinBox").classList.remove("hidden"); $("#form").classList.add("hidden");
-  $("#logoutBtn").classList.add("hidden"); $("#result").innerHTML = "";
-  $("#pinErr").textContent = msg || ""; $("#pin").value = ""; $("#pin").focus();
-  $("#meta").textContent = "";
-}
-function showSearch(){
-  $("#pinBox").classList.add("hidden"); $("#form").classList.remove("hidden");
-  $("#logoutBtn").classList.remove("hidden");
-  $("#meta").textContent = "Terhubung ke data member (Google Sheet)";
-  $("#result").innerHTML = `<div class="empty"><div>Data member akan tampil di sini.</div></div>`;
-  $("#q").focus();
-}
-
-async function login(){
-  const pin = $("#pin").value.trim();
-  if (!pin){ $("#pin").focus(); return; }
-  $("#pinErr").textContent = "Memeriksa PIN…";
-  try{
-    const res = await api({action:"ping", pin});
-    if (res.ok){
-      PIN = pin; try { localStorage.setItem(PIN_KEY, pin); } catch(_) {}
-      showSearch(); toast("PIN benar, siap dipakai");
-    } else {
-      $("#pinErr").textContent = res.error || "PIN salah";
-    }
-  }catch(err){ $("#pinErr").textContent = "Tidak bisa terhubung ke server. Cek koneksi internet."; }
-}
-
-let busy = false;
-async function search(){
-  if (busy) return;
-  const q = norm($("#q").value);
-  const box = $("#result");
-  if (!q){ $("#q").focus(); return; }
-  if (q.length < 9){ box.innerHTML = `<div class="status no">Nomor terlalu pendek <small>— minimal 9 digit</small></div>`; return; }
-  busy = true;
-  box.innerHTML = `<div class="loading"><div class="spin"></div>Mencari member…</div>`;
-  try{
-    const res = await api({action:"find", pin:PIN, phone:q});
-    if (!res.ok){
-      if (res.code === "PIN"){ try{localStorage.removeItem(PIN_KEY);}catch(_){}; PIN=""; showPin("PIN sudah tidak berlaku, masukkan PIN baru."); }
-      else box.innerHTML = `<div class="status no">${esc(res.error || "Terjadi kesalahan")}</div>`;
-    } else if (res.members && res.members.length){
-      box.innerHTML = `<div class="status ok">✓ Member terdaftar <small>— berhak dapat promo</small></div>` + res.members.map(card).join("");
-    } else {
-      box.innerHTML = `<div class="status no">✕ Nomor ${esc(pretty(q))} tidak terdaftar <small>— bukan member Taman Palem / PIK</small></div>`;
-    }
-  }catch(err){
-    box.innerHTML = `<div class="status no">Tidak bisa terhubung ke server <small>— cek koneksi internet, lalu coba lagi</small></div>`;
+  function config(over) {
+    const c = Object.assign({}, DEFAULTS, over || {});
+    c.tiers = (c.tiers || DEFAULTS.tiers).slice().sort((a, b) => b[0] - a[0]);
+    c.packages = (c.packages || DEFAULTS.packages).slice().sort((a, b) => a.points - b.points);
+    return c;
   }
-  busy = false;
+
+  /* ---------- Nomor HP ---------- */
+  // 08…, 8…, 62…, +62… → 62xxxxxxxxxx; valid 10–15 digit
+  function normPhone(v) {
+    let d = String(v == null ? "" : v).replace(/\D/g, "");
+    if (!d) return null;
+    if (d.startsWith("62")) d = d.slice(2);
+    d = d.replace(/^0+/, "");
+    if (!d) return null;
+    const p = "62" + d;
+    if (p.length < 10 || p.length > 15) return null;
+    return p;
+  }
+  function shardOf(phone62) { return "s" + phone62.slice(-1); }
+  function prettyPhone(p62) {
+    const local = "0" + String(p62).slice(2);
+    return local.replace(/^(\d{4})(\d{4})(\d+)$/, "$1-$2-$3");
+  }
+
+  /* ---------- Waktu (Asia/Jakarta) ---------- */
+  function jktParts(ms, c) {
+    const off = (c || DEFAULTS).tzOffsetMin * 60000;
+    const d = new Date(ms + off);
+    return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), hh: d.getUTCHours(), mm: d.getUTCMinutes() };
+  }
+  function ymOf(ms, c) { const p = jktParts(ms, c); return p.y + "-" + String(p.m).padStart(2, "0"); }
+  function daysIn(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); } // m 1-12
+  // Akhir hari yang sama N bulan kemudian (Jakarta), dalam ms UTC
+  function expiryOf(ms, c) {
+    c = c || DEFAULTS;
+    const p = jktParts(ms, c);
+    let y = p.y, m = p.m + c.expiryMonths;
+    y += Math.floor((m - 1) / 12); m = ((m - 1) % 12) + 1;
+    const d = Math.min(p.d, daysIn(y, m));
+    return Date.UTC(y, m - 1, d, 23, 59, 59, 999) - c.tzOffsetMin * 60000;
+  }
+
+  /* ---------- Tiering & paket ---------- */
+  function pointsFor(net, c) {
+    c = c || DEFAULTS;
+    for (const [min, pts] of c.tiers) if (net >= min) return pts;
+    return 0;
+  }
+  // Selisih ke batas poin berikutnya bila ≤ nearGap
+  function nearNext(net, c) {
+    c = config(c);
+    const asc = c.tiers.slice().sort((a, b) => a[0] - b[0]);
+    for (const [min, pts] of asc) {
+      if (net < min) {
+        const gap = min - net;
+        return gap <= c.nearGap ? { gap, points: pts, at: min } : null;
+      }
+    }
+    return null;
+  }
+  // Paket yang terjangkau oleh saldo (dan nilai transaksi bila diberikan), tertinggi dulu
+  function affordable(balance, value, c) {
+    c = config(c);
+    return c.packages
+      .filter(p => p.points <= balance && (value == null || p.discount <= value))
+      .sort((a, b) => b.points - a.points);
+  }
+
+  /* ---------- Ledger & FIFO ---------- */
+  function activeRows(rows) {
+    return (rows || [])
+      .map((r, i) => ({ r, i }))
+      .filter(x => x.r.status !== "VOID")
+      .sort((a, b) => (Date.parse(a.r.time) - Date.parse(b.r.time)) || (a.i - b.i))
+      .map(x => x.r);
+  }
+
+  // Putar ulang ledger: lot poin FIFO dengan kedaluwarsa. Saldo tidak pernah disimpan.
+  function replay(rows, nowMs, c) {
+    c = config(c);
+    const lots = [];
+    const expired = []; // {at, points, outlet}
+    let shortfall = 0;
+    function expireUntil(t) {
+      for (const lot of lots) {
+        if (lot.remaining > 0 && lot.expiresAt < t) {
+          expired.push({ at: lot.expiresAt, points: lot.remaining, outlet: lot.outlet, earnedAt: lot.earnedAt });
+          lot.remaining = 0;
+        }
+      }
+    }
+    for (const r of activeRows(rows)) {
+      const t = Date.parse(r.time);
+      expireUntil(t);
+      if (r.type === "EARN" && r.points > 0) {
+        lots.push({ txId: r.txId, earnedAt: t, points: r.points, remaining: r.points, expiresAt: expiryOf(t, c), outlet: r.outlet });
+      } else if (r.type === "REDEEM") {
+        let need = Math.abs(r.points || 0);
+        for (const lot of lots) {
+          if (!need) break;
+          if (lot.remaining <= 0) continue;
+          const take = Math.min(lot.remaining, need);
+          lot.remaining -= take; need -= take;
+        }
+        shortfall += need;
+      }
+    }
+    expireUntil(nowMs);
+    const live = lots.filter(l => l.remaining > 0);
+    const balance = live.reduce((s, l) => s + l.remaining, 0);
+    let nextExpiry = null;
+    if (live.length) {
+      const at = Math.min(...live.map(l => l.expiresAt));
+      nextExpiry = { at, points: live.filter(l => l.expiresAt === at).reduce((s, l) => s + l.remaining, 0) };
+    }
+    // Rincian per bulan dapat
+    const byMonth = {};
+    for (const l of live) {
+      const k = ymOf(l.earnedAt, c);
+      const b = byMonth[k] || (byMonth[k] = { month: k, points: 0, expiresFrom: l.expiresAt });
+      b.points += l.remaining; b.expiresFrom = Math.min(b.expiresFrom, l.expiresAt);
+    }
+    const months = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
+    return { balance, lots: live, nextExpiry, months, expired, shortfall };
+  }
+
+  /* ---------- Transaksi ---------- */
+  function totalRedeem(redeem, c) {
+    c = config(c);
+    let points = 0, discount = 0;
+    for (const p of c.packages) {
+      const n = Math.max(0, Math.floor(Number((redeem || {})[p.points]) || 0));
+      points += n * p.points; discount += n * p.discount;
+    }
+    return { points, discount };
+  }
+
+  function computeTx(value, redeem, balance, c) {
+    c = config(c);
+    value = Math.max(0, Math.round(Number(value) || 0));
+    const r = totalRedeem(redeem, c);
+    const errors = [];
+    if (r.points > balance) errors.push("INSUFFICIENT");
+    if (r.discount > value) errors.push("DISCOUNT_EXCEEDS");
+    const net = Math.max(0, value - r.discount);
+    const earn = pointsFor(net, c);
+    return {
+      value, discount: r.discount, pointsUsed: r.points, net, earn,
+      after: balance - r.points + earn, near: nearNext(net, c),
+      big: value > c.bigValue, errors, ok: errors.length === 0 && value > 0,
+    };
+  }
+
+  // Kelompokkan baris per txId (urutan terbaru dulu)
+  function transactions(rows) {
+    const map = new Map();
+    (rows || []).forEach((r, i) => {
+      let t = map.get(r.txId);
+      if (!t) { t = { txId: r.txId, time: r.time, outlet: r.outlet, kasir: r.kasir, value: r.value, net: r.net, discount: 0, earned: 0, redeemed: 0, status: r.status, idx: i }; map.set(r.txId, t); }
+      if (r.type === "EARN") { t.earned = r.points; t.net = r.net; t.value = r.value; t.discount = r.discount || t.discount; }
+      if (r.type === "REDEEM") { t.redeemed = Math.abs(r.points); t.discount = r.discount; }
+      if (r.status === "VOID") t.status = "VOID";
+      t.idx = Math.max(t.idx, i);
+    });
+    return [...map.values()].sort((a, b) => (Date.parse(b.time) - Date.parse(a.time)) || (b.idx - a.idx));
+  }
+  function lastActiveTx(rows) { return transactions(rows).find(t => t.status !== "VOID") || null; }
+
+  function isDuplicate(rows, outlet, value, nowMs, c) {
+    c = config(c);
+    return transactions(rows).some(t => t.status !== "VOID" && t.outlet === outlet && t.value === value &&
+      nowMs - Date.parse(t.time) >= 0 && nowMs - Date.parse(t.time) <= c.dupWindowMs);
+  }
+
+  // Aturan batal: kasir hanya transaksi aktif terakhir, ≤10 menit, outlet sama.
+  function voidCheck(rows, txId, outlet, nowMs, c) {
+    c = config(c);
+    const last = lastActiveTx(rows);
+    if (!last || last.txId !== txId) return { allowed: false, code: "NOT_LAST", needsAdmin: false };
+    const age = nowMs - Date.parse(last.time);
+    if (age > c.voidWindowMs) return { allowed: false, code: "TOO_OLD", needsAdmin: true };
+    if (last.outlet !== outlet) return { allowed: false, code: "OTHER_OUTLET", needsAdmin: true };
+    return { allowed: true };
+  }
+
+  function txIdNew(nowMs) { return "t" + nowMs.toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  /* ---------- Router ----------
+   * store: { rows(phone) -> array (snapshot), config? }
+   * Kembalikan { ok, rows? (dokumen ledger baru), ... } atau { ok:false, code } */
+  function handle(req, store) {
+    const c = config(store && store.config);
+    const now = req.now != null ? req.now : Date.now();
+    const phone = normPhone(req.phone);
+    if (!phone) return { ok: false, code: "BAD_PHONE" };
+    const rows = (store.rows(phone) || []).slice();
+    const isAdmin = !!req.isAdmin;
+
+    if (req.type === "summary") {
+      const rp = replay(rows, now, c);
+      return { ok: true, phone, ...rp, history: transactions(rows).slice(0, 6), last: lastActiveTx(rows), offers: affordable(rp.balance, null, c) };
+    }
+
+    if (req.type === "commit") {
+      if (!req.kasir) return { ok: false, code: "NO_KASIR" };
+      if (!req.outlet || !c.outlets.includes(req.outlet)) return { ok: false, code: "NO_OUTLET" };
+      const before = replay(rows, now, c);
+      const tx = computeTx(req.value, req.redeem, before.balance, c);
+      if (tx.value <= 0) return { ok: false, code: "NO_VALUE" };
+      if (tx.errors.length) return { ok: false, code: tx.errors[0] };
+      if (tx.big && !req.confirmBig) return { ok: false, code: "NEED_BIG_CONFIRM" };
+      if (isDuplicate(rows, req.outlet, tx.value, now, c)) {
+        if (!(isAdmin && req.adminOverride)) return { ok: false, code: "DUPLICATE", needsAdmin: true };
+      }
+      const txId = req.txId || txIdNew(now);
+      const time = new Date(now).toISOString();
+      const base = { txId, time, outlet: req.outlet, kasir: req.kasir, value: tx.value, discount: tx.discount, net: tx.net, status: "ACTIVE" };
+      const add = [];
+      if (tx.pointsUsed > 0) add.push({ ...base, type: "REDEEM", points: -tx.pointsUsed, note: req.note || "" });
+      add.push({ ...base, type: "EARN", points: tx.earn, note: (isAdmin && req.adminOverride) ? "duplikat disetujui admin" : (req.note || "") });
+      const newRows = rows.concat(add);
+      const after = replay(newRows, now, c);
+      const crossed = c.packages.filter(p => before.balance - tx.pointsUsed < p.points && after.balance >= p.points).sort((a, b) => b.points - a.points);
+      return { ok: true, phone, txId, rows: newRows, tx, before: before.balance, after: after.balance,
+        promoCode: tx.discount > 0 ? "POIN-" + Math.round(tx.discount / 1000) + "K" : "", crossed, summary: after };
+    }
+
+    if (req.type === "void") {
+      const chk = voidCheck(rows, req.txId, req.outlet, now, c);
+      if (!chk.allowed) {
+        if (chk.code === "NOT_LAST") return { ok: false, code: "NOT_LAST" };
+        if (!(isAdmin && req.adminOverride)) return { ok: false, code: chk.code, needsAdmin: true };
+      }
+      const note = chk.allowed ? "dibatalkan kasir" : "dibatalkan, disetujui admin";
+      const newRows = rows.map(r => r.txId === req.txId ? { ...r, status: "VOID", note, voidedAt: new Date(now).toISOString(), voidedBy: req.kasir || "" } : r);
+      return { ok: true, phone, rows: newRows, summary: replay(newRows, now, c) };
+    }
+
+    return { ok: false, code: "BAD_REQUEST" };
+  }
+
+  /* ---------- Import data member ---------- */
+  function parseTable(text) {
+    text = String(text || "").replace(/^﻿/, "");
+    const firstLines = text.split(/\r?\n/).slice(0, 6).join("\n");
+    const tabs = (firstLines.match(/\t/g) || []).length, commas = (firstLines.match(/,/g) || []).length, semis = (firstLines.match(/;/g) || []).length;
+    const delim = tabs > 0 && tabs >= commas ? "\t" : (semis > commas ? ";" : ",");
+    const rows = []; let row = [], f = "", q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) {
+        if (ch === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; }
+        else f += ch;
+      } else if (ch === '"' && f === "") q = true;
+      else if (ch === delim) { row.push(f); f = ""; }
+      else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && text[i + 1] === "\n") i++;
+        row.push(f); f = ""; rows.push(row); row = [];
+      } else f += ch;
+    }
+    if (f !== "" || row.length) { row.push(f); rows.push(row); }
+    return { delim, rows: rows.filter(r => r.some(x => String(x).trim() !== "")) };
+  }
+
+  function parseDate(s) {
+    s = String(s || "").trim();
+    let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return ymd(+m[1], +m[2], +m[3]);
+    m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+    if (m) {
+      let a = +m[1], b = +m[2], y = +m[3]; if (y < 100) y += 2000;
+      let d = a, mo = b;            // bawaan d/m/yyyy
+      if (b > 12 && a <= 12) { d = b; mo = a; } // jelas m/d/yyyy
+      return ymd(y, mo, d);
+    }
+    if (/^\d{5}(\.\d+)?$/.test(s)) { // serial Excel
+      const dt = new Date(Date.UTC(1899, 11, 30) + Math.floor(+s) * 86400000);
+      return ymd(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
+    }
+    return "";
+  }
+  function ymd(y, m, d) {
+    if (!(y > 1900 && m >= 1 && m <= 12 && d >= 1 && d <= 31)) return "";
+    return y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  }
+
+  // Hanya nama, cabang, nomor, customercode, joindate yang disimpan.
+  function importMembers(text) {
+    const { rows } = parseTable(text);
+    const norm = s => String(s || "").trim().toLowerCase().replace(/\s+/g, "");
+    let h = -1, idx = {};
+    for (let i = 0; i < Math.min(6, rows.length); i++) {
+      const cols = rows[i].map(norm);
+      if (cols.includes("phone") && cols.includes("customername")) {
+        h = i;
+        const find = (...names) => { for (const n of names) { const k = cols.indexOf(n); if (k >= 0) return k; } return -1; };
+        idx = { cabang: find("cabang", "outlet"), name: find("customername"), phone: find("phone"), code: find("customercode"), join: find("joindate") };
+        break;
+      }
+    }
+    if (h < 0) return { ok: false, code: "NO_HEADER" };
+    const members = {}; const meta = {};
+    let invalid = 0, dupMerged = 0, total = 0;
+    for (let i = h + 1; i < rows.length; i++) {
+      const r = rows[i]; total++;
+      const phone = normPhone(r[idx.phone]);
+      const name = String(r[idx.name] || "").trim();
+      if (!phone || !name) { invalid++; continue; }
+      const join = idx.join >= 0 ? parseDate(r[idx.join]) : "";
+      const rec = [name, idx.cabang >= 0 ? String(r[idx.cabang] || "").trim() : "", idx.code >= 0 ? String(r[idx.code] || "").trim() : "", join];
+      if (members[phone]) {
+        dupMerged++;
+        if ((join || "") >= (members[phone][3] || "")) members[phone] = rec; // terbaru menang; seri → baris lebih bawah
+      } else members[phone] = rec;
+    }
+    const byCabang = {};
+    for (const p in members) { const cb = members[p][1] || "(tanpa cabang)"; byCabang[cb] = (byCabang[cb] || 0) + 1; }
+    const shards = {};
+    for (let d = 0; d < 10; d++) shards["s" + d] = { m: {}, n: 0 };
+    for (const p in members) { const s = shards[shardOf(p)]; s.m[p] = members[p]; s.n++; }
+    return { ok: true, count: Object.keys(members).length, rowsRead: total, invalid, dupMerged, byCabang, shards };
+  }
+
+  /* ---------- Rekap bulanan ---------- */
+  // ledgers: { phone62: rows[] }, month "YYYY-MM"
+  function monthlyReport(ledgers, month, nowMs, sales, c) {
+    c = config(c);
+    const out = {};
+    const get = o => out[o] || (out[o] = { outlet: o, tx: 0, members: new Set(), pointsIn: 0, pointsRedeemed: 0, pointsExpired: 0, discount: 0, memberSales: 0, outletSales: 0 });
+    for (const o of c.outlets) get(o);
+    for (const phone in ledgers) {
+      const rows = ledgers[phone] || [];
+      for (const r of activeRows(rows)) {
+        const t = Date.parse(r.time);
+        if (ymOf(t, c) !== month) continue;
+        const o = get(r.outlet);
+        if (r.type === "EARN") { o.tx++; o.members.add(phone); o.pointsIn += r.points; o.memberSales += r.net; }
+        if (r.type === "REDEEM") { o.pointsRedeemed += Math.abs(r.points); o.discount += r.discount; }
+      }
+      for (const e of replay(rows, nowMs, c).expired) {
+        if (e.at <= nowMs && ymOf(e.at, c) === month) get(e.outlet).pointsExpired += e.points;
+      }
+    }
+    const list = Object.values(out).map(o => {
+      const outletSales = Number((sales || {})[o.outlet]) || 0;
+      return { ...o, members: o.members.size, outletSales,
+        share: outletSales > 0 ? o.memberSales / outletSales : null,
+        discountPct: o.memberSales > 0 ? o.discount / o.memberSales : null };
+    });
+    const tot = list.reduce((a, o) => {
+      for (const k of ["tx", "members", "pointsIn", "pointsRedeemed", "pointsExpired", "discount", "memberSales", "outletSales"]) a[k] += o[k];
+      return a;
+    }, { outlet: "Total", tx: 0, members: 0, pointsIn: 0, pointsRedeemed: 0, pointsExpired: 0, discount: 0, memberSales: 0, outletSales: 0 });
+    tot.share = tot.outletSales > 0 ? tot.memberSales / tot.outletSales : null;
+    tot.discountPct = tot.memberSales > 0 ? tot.discount / tot.memberSales : null;
+    return { rows: list, total: tot };
+  }
+
+  function csvCell(v) { const s = String(v == null ? "" : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  function ledgerCsv(ledgers, kasirName) {
+    const head = ["phone", "txId", "time", "type", "outlet", "kasir", "value", "points", "discount", "net", "status", "note"];
+    const lines = [head.join(",")];
+    const all = [];
+    for (const phone in ledgers) for (const r of ledgers[phone] || []) all.push({ phone, r });
+    all.sort((a, b) => Date.parse(a.r.time) - Date.parse(b.r.time));
+    for (const { phone, r } of all) {
+      lines.push([phone, r.txId, r.time, r.type, r.outlet, kasirName ? kasirName(r.kasir) : r.kasir, r.value, r.points, r.discount, r.net, r.status, r.note].map(csvCell).join(","));
+    }
+    return lines.join("\n");
+  }
+
+  return {
+    DEFAULTS, config, normPhone, shardOf, prettyPhone, jktParts, ymOf, expiryOf,
+    pointsFor, nearNext, affordable, replay, computeTx, transactions, lastActiveTx,
+    isDuplicate, voidCheck, handle, parseTable, parseDate, importMembers, monthlyReport, ledgerCsv, csvCell,
+  };
+});
+
+</script>
+<script>
+(function(){
+"use strict";
+// ====== PENGATURAN ======
+const API_URL = "https://script.google.com/macros/s/AKfycbyAF74rkcWCDi8v5t8w0ORGTHFAyTYbHcs6tOu6YZZAFuINuXEtZCyl-RiPa6dmLIU/exec"; // URL Web App Google Apps Script (berakhiran /exec)
+// ========================
+const C = window.SnapyCore;
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtRp = n => "Rp" + Math.round(Number(n) || 0).toLocaleString("id-ID");
+const fmtN = n => (Number(n) || 0).toLocaleString("id-ID");
+const TZ = "Asia/Jakarta";
+const fmtDate = ms => new Date(ms).toLocaleDateString("id-ID", {timeZone:TZ, day:"numeric", month:"long", year:"numeric"});
+const fmtDT = ms => new Date(ms).toLocaleString("id-ID", {timeZone:TZ, day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"});
+const fmtMonth = ym => { const [y,m] = ym.split("-").map(Number); return new Date(Date.UTC(y, m-1, 15)).toLocaleDateString("id-ID", {month:"long", year:"numeric", timeZone:"UTC"}); };
+const fmtYMD = s => { if (!s) return "-"; const [y,m,d] = s.split("-").map(Number); return new Date(Date.UTC(y,m-1,d)).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}); };
+const ls = { get(k){ try { return localStorage.getItem(k); } catch(_) { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(_) {} }, del(k){ try { localStorage.removeItem(k); } catch(_) {} } };
+
+const S = { pin: ls.get("snapy_pin") || "", name: ls.get("snapy_kasir_name") || "", role: "", isAdmin: false,
+  cfg: C.config(), cur: null, form: { value: 0, redeem: {} }, result: null, busy: false, skew: 0 };
+const now = () => Date.now() + S.skew; // waktu server
+
+/* ---------- API ---------- */
+async function api(action, payload){
+  const params = new URLSearchParams({ a: action, pin: S.pin, p: JSON.stringify(payload || {}) });
+  let r;
+  try { r = await fetch(API_URL + "?" + params.toString(), { redirect: "follow" }); }
+  catch(_) { throw { net: true }; }
+  if (!r.ok) throw { net: true };
+  const j = await r.json();
+  if (j && typeof j.now === "number") S.skew = j.now - Date.now();
+  if (j && !j.ok && j.code === "PIN" && action !== "ping") { logout("PIN sudah tidak berlaku. Masuk lagi dengan PIN baru."); throw { handled: true }; }
+  return j;
+}
+function errText(e){ if (e && e.handled) return ""; if (e && e.code === "LOCK") return e.error; return "Tidak bisa terhubung ke server. Cek koneksi internet lalu coba lagi."; }
+
+/* ---------- UI kecil ---------- */
+let toastT;
+function toast(msg){ if (!msg) return; const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
+function dialog(html, wire){
+  const m = $("#modal"), d = $("#dialog");
+  d.innerHTML = html; m.hidden = false;
+  return new Promise(resolve => {
+    const close = v => { m.hidden = true; d.innerHTML = ""; resolve(v); };
+    d.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => close(b.dataset.close === "ok")));
+    if (wire) wire(d, close);
+    const f = d.querySelector("[data-focus]") || d.querySelector("button"); if (f) f.focus();
+  });
+}
+function deviceOutlet(){ const o = ls.get("snapy_outlet"); return S.cfg.outlets.includes(o) ? o : ""; }
+
+/* ---------- Masuk / keluar ---------- */
+function showLogin(msg){
+  $("#loginBox").hidden = false; $("#tabKasir").hidden = true; $("#tabAdmin").hidden = true; $("#tabs").hidden = true; $("#logoutBtn").hidden = true;
+  $("#who").textContent = ""; $("#loginName").value = S.name; $("#loginPin").value = ""; $("#loginErr").textContent = msg || "";
+  (S.name ? $("#loginPin") : $("#loginName")).focus();
+}
+function showApp(){
+  $("#loginBox").hidden = true; $("#tabs").hidden = false; $("#logoutBtn").hidden = false;
+  $("#tabBtnAdmin").hidden = !S.isAdmin;
+  $("#who").textContent = S.name + " · " + (S.isAdmin ? "Admin" : "Kasir");
+  showTab("kasir");
+}
+async function login(){
+  const name = $("#loginName").value.trim(), pin = $("#loginPin").value.trim();
+  if (!name) { $("#loginErr").textContent = "Isi nama kasir."; $("#loginName").focus(); return; }
+  if (!pin) { $("#loginErr").textContent = "Isi PIN."; $("#loginPin").focus(); return; }
+  $("#loginErr").textContent = "Memeriksa PIN…"; S.pin = pin;
+  try {
+    const r = await api("ping");
+    if (!r.ok) { $("#loginErr").textContent = r.code === "LOCK" ? r.error : "PIN salah."; S.pin = ""; return; }
+    S.name = name; S.role = r.role; S.isAdmin = r.role === "admin";
+    if (r.outlets) S.cfg = C.config({ outlets: r.outlets });
+    ls.set("snapy_pin", pin); ls.set("snapy_kasir_name", name);
+    showApp(); toast("Masuk sebagai " + name);
+  } catch(e) { $("#loginErr").textContent = errText(e); S.pin = ""; }
+}
+function logout(msg){ S.pin = ""; S.role = ""; S.isAdmin = false; ls.del("snapy_pin"); resetAll(true); showLogin(msg); }
+
+async function boot(){
+  $("#repMonth").value = C.ymOf(Date.now());
+  if (!API_URL || API_URL.indexOf("/*") === 0) { $("#banner").innerHTML = `<div class="note warn"><b>Halaman belum terhubung ke Google Sheet.</b> Isi API_URL di index.html.</div>`; return; }
+  if (!S.pin || !S.name) return showLogin();
+  try {
+    const r = await api("ping");
+    if (!r.ok) return showLogin(r.code === "LOCK" ? r.error : "PIN sudah tidak berlaku. Masuk lagi.");
+    S.role = r.role; S.isAdmin = r.role === "admin"; if (r.outlets) S.cfg = C.config({ outlets: r.outlets });
+    showApp();
+  } catch(e) { showLogin(errText(e)); }
 }
 
-$("#pinBtn").addEventListener("click", login);
-$("#pin").addEventListener("keydown", e => { if (e.key === "Enter" || e.keyCode === 13){ e.preventDefault(); login(); } });
-$("#cekBtn").addEventListener("click", search);
-$("#q").addEventListener("keydown", e => { if (e.key === "Enter" || e.keyCode === 13){ e.preventDefault(); search(); } });
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && !$("#form").classList.contains("hidden")){ $("#q").value = ""; $("#result").innerHTML = ""; $("#q").focus(); }
-});
-$("#logoutBtn").addEventListener("click", () => {
-  if (!confirm("Keluar dari perangkat ini? PIN perlu dimasukkan lagi.")) return;
-  try{localStorage.removeItem(PIN_KEY);}catch(_){}; PIN=""; showPin();
-});
+/* ---------- Cek member ---------- */
+async function lookup(){
+  if (!S.role) return;
+  const phone = C.normPhone($("#phone").value);
+  S.result = null; $("#txArea").innerHTML = ""; $("#historyArea").innerHTML = "";
+  if (!phone) { $("#memberArea").innerHTML = `<div class="note warn">Nomor HP tidak valid. Periksa lagi, minimal 10 digit.</div>`; return; }
+  $("#memberArea").innerHTML = `<div class="card"><span class="spin"></span>Mencari member…</div>`;
+  try {
+    const r = await api("lookup", { phone });
+    if (!r.ok) { $("#memberArea").innerHTML = `<div class="note warn">Nomor HP tidak valid.</div>`; return; }
+    if (!r.member) {
+      S.cur = null;
+      $("#memberArea").innerHTML = !r.memberCount
+        ? `<div class="note warn"><b>Data member belum tersedia.</b> Sheet member kosong atau baris judulnya tidak ditemukan. Hubungi admin.</div>`
+        : `<div class="note warn"><b>${esc(C.prettyPhone(phone))} tidak terdaftar</b> sebagai member Snapy. Poin hanya untuk member terdaftar.</div>`;
+      return;
+    }
+    S.cur = { phone, member: r.member, rows: r.rows || [] };
+    S.form = { value: 0, redeem: {} };
+    renderMember();
+  } catch(e) { $("#memberArea").innerHTML = e && e.handled ? "" : `<div class="note warn">${esc(errText(e))}</div>`; }
+}
+function summary(){ return C.handle({ type: "summary", phone: S.cur.phone, now: now() }, { rows: () => S.cur.rows, config: S.cfg }); }
 
-if (!API_URL){
-  $("#result").innerHTML = `<div class="status no">Halaman belum terhubung ke Google Sheet <small>— isi API_URL di index.html</small></div>`;
-} else if (PIN){ showSearch(); } else { showPin(); }
+function renderMember(){
+  const cur = S.cur; if (!cur) return;
+  const sm = summary(); cur.sm = sm;
+  const [name, cabang, code, join] = cur.member;
+  const offers = sm.offers;
+  const offer = offers.length
+    ? `<div class="note ok"><b>Customer bisa memakai ${fmtN(offers[0].points)} poin untuk potongan ${fmtRp(offers[0].discount)}.</b>${offers.length > 1 ? `<br>Alternatif: ${offers.slice(1).map(p => `${fmtN(p.points)} poin (${fmtRp(p.discount)})`).join(", ")}.` : ""}</div>` : "";
+  const months = sm.months.length
+    ? `<div class="tbl-wrap"><table><thead><tr><th>Bulan dapat</th><th class="n">Poin</th><th>Hangus mulai</th></tr></thead><tbody>${sm.months.map(m => `<tr><td>${esc(fmtMonth(m.month))}</td><td class="n">${fmtN(m.points)}</td><td>${esc(fmtDate(m.expiresFrom + 1))}</td></tr>`).join("")}</tbody></table></div>` : "";
+  $("#memberArea").innerHTML = `
+    <article class="member" aria-label="Kartu member">
+      <div class="member-top">
+        <div style="min-width:0">
+          <div class="verify">Atas nama Bapak/Ibu <b>${esc(name)}</b>?</div>
+          <h2 class="mname">${esc(name)}</h2>
+          <div class="mmeta">${esc(C.prettyPhone(cur.phone))} · ${esc(cabang || "-")}${code ? " · " + esc(code) : ""}</div>
+        </div>
+        <div class="bal"><div class="bal-l">Saldo poin</div><div class="bal-n" id="balN">${fmtN(sm.balance)}</div></div>
+      </div>
+      <div class="perf" aria-hidden="true"></div>
+      <div class="member-body">
+        <div class="kv">
+          <div><span>Cabang</span><b>${esc(cabang || "-")}</b></div>
+          <div><span>Member sejak</span><b>${esc(fmtYMD(join))}</b></div>
+          <div><span>Hangus berikutnya</span><b>${sm.nextExpiry ? `${fmtN(sm.nextExpiry.points)} poin pada ${esc(fmtDate(sm.nextExpiry.at + 1))}` : "-"}</b></div>
+        </div>
+        ${offer}
+        ${months}
+      </div>
+    </article>`;
+  renderTx(); renderHistory();
+}
+
+/* ---------- Transaksi ---------- */
+function curOutlet(){ const sel = $("#txOutlet"); return sel ? sel.value : ""; }
+function renderTx(){
+  const cur = S.cur; if (!cur) { $("#txArea").innerHTML = ""; return; }
+  if (S.result) return renderResult();
+  const def = deviceOutlet() || (S.cfg.outlets.includes(cur.member[1]) ? cur.member[1] : "");
+  const opts = [`<option value="">Pilih outlet…</option>`].concat(S.cfg.outlets.map(o => `<option ${o === def ? "selected" : ""}>${esc(o)}</option>`)).join("");
+  $("#txArea").innerHTML = `
+    <div class="card">
+      <h2>Transaksi</h2>
+      <div class="grid2">
+        <div><label class="label" for="txOutlet">Outlet transaksi</label><select id="txOutlet">${opts}</select></div>
+        <div><label class="label" for="txValue">Nilai transaksi</label><input id="txValue" class="big-in" inputmode="numeric" autocomplete="off" placeholder="Rp0" value="${S.form.value ? fmtN(S.form.value) : ""}"></div>
+      </div>
+      <div style="margin-top:14px"><span class="label">Tukar poin</span><div class="pkgs" id="pkgs"></div></div>
+      <div id="txSum" style="margin-top:14px"></div>
+      <div id="txNear"></div>
+      <div class="row" style="margin-top:14px" id="saveRow"></div>
+    </div>`;
+  $("#txOutlet").addEventListener("change", e => { if (e.target.value) ls.set("snapy_outlet", e.target.value); updateTx(); });
+  $("#txValue").addEventListener("input", e => {
+    const v = Number(String(e.target.value).replace(/\D/g, "")) || 0;
+    S.form.value = v; e.target.value = v ? fmtN(v) : "";
+    clampRedeem(); updateTx();
+  });
+  updateTx();
+}
+function clampRedeem(){
+  const bal = S.cur.sm.balance;
+  let tx = C.computeTx(S.form.value, S.form.redeem, bal, S.cfg);
+  const pk = S.cfg.packages.slice().sort((a,b) => b.points - a.points);
+  for (let guard = 0; guard < 50 && tx.errors.length; guard++) {
+    const p = pk.find(p => (S.form.redeem[p.points] || 0) > 0); if (!p) break;
+    S.form.redeem[p.points]--; tx = C.computeTx(S.form.value, S.form.redeem, bal, S.cfg);
+  }
+}
+function updateTx(){
+  const bal = S.cur.sm.balance;
+  const tx = C.computeTx(S.form.value, S.form.redeem, bal, S.cfg);
+  $("#pkgs").innerHTML = S.cfg.packages.map(p => {
+    const n = S.form.redeem[p.points] || 0;
+    const t2 = C.computeTx(S.form.value, { ...S.form.redeem, [p.points]: n + 1 }, bal, S.cfg);
+    const canPlus = S.form.value > 0 && t2.errors.length === 0;
+    return `<div class="pkg"><div class="t"><b>${fmtN(p.points)} poin</b><small>potongan ${fmtRp(p.discount)}</small></div>
+      <div class="step"><button type="button" data-p="${p.points}" data-d="-1" aria-label="Kurangi paket ${p.points} poin" ${n ? "" : "disabled"}>−</button><output>${n}</output><button type="button" data-p="${p.points}" data-d="1" aria-label="Tambah paket ${p.points} poin" ${canPlus ? "" : "disabled"}>+</button></div></div>`;
+  }).join("");
+  $("#pkgs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.p; S.form.redeem[k] = Math.max(0, (S.form.redeem[k] || 0) + Number(b.dataset.d)); updateTx();
+  }));
+  $("#txSum").innerHTML = `<div class="sum">
+    <div><span>Nilai transaksi</span><b>${fmtRp(tx.value)}</b></div>
+    <div><span>Potongan poin${tx.pointsUsed ? ` (${fmtN(tx.pointsUsed)} poin)` : ""}</span><b>−${fmtRp(tx.discount)}</b></div>
+    <div class="tot"><span>Bayar bersih</span><span>${fmtRp(tx.net)}</span></div>
+    <div><span>Poin didapat</span><span class="pts">+${fmtN(tx.earn)}</span></div>
+    <div><span>Saldo setelah</span><b>${fmtN(tx.after)} poin</b></div></div>`;
+  $("#txNear").innerHTML = tx.near && tx.value > 0 ? `<div class="hint">Kurang ${fmtRp(tx.near.gap)} lagi untuk dapat ${fmtN(tx.near.points)} poin.</div>` : "";
+  const ready = tx.ok && !!curOutlet();
+  const why = !curOutlet() ? "Pilih outlet transaksi." : tx.value <= 0 ? "Isi nilai transaksi." : "";
+  $("#saveRow").innerHTML = `<button class="btn alt grow" id="saveBtn" type="button" ${ready ? "" : "disabled"}>Simpan transaksi</button>${why ? `<div class="hint" style="width:100%">${esc(why)}</div>` : ""}`;
+  $("#saveBtn").addEventListener("click", confirmSave);
+}
+
+async function confirmSave(){
+  const cur = S.cur; const bal = cur.sm.balance;
+  const tx = C.computeTx(S.form.value, S.form.redeem, bal, S.cfg);
+  const outlet = curOutlet();
+  const ok = await dialog(`
+    <h3>Simpan transaksi?</h3>
+    <div class="note info">Atas nama Bapak/Ibu <b>${esc(cur.member[0])}</b> · ${esc(C.prettyPhone(cur.phone))}</div>
+    <div class="sum">
+      <div><span>Outlet</span><b>${esc(outlet)}</b></div>
+      <div><span>Nilai transaksi</span><b>${fmtRp(tx.value)}</b></div>
+      <div><span>Tukar poin</span><b>${tx.pointsUsed ? `${fmtN(tx.pointsUsed)} poin = −${fmtRp(tx.discount)}` : "tidak ada"}</b></div>
+      <div class="tot"><span>Bayar bersih</span><span>${fmtRp(tx.net)}</span></div>
+      <div><span>Poin didapat</span><span class="pts">+${fmtN(tx.earn)}</span></div>
+      <div><span>Saldo setelah</span><b>${fmtN(tx.after)} poin</b></div>
+    </div>
+    ${tx.big ? `<label class="check"><input type="checkbox" id="bigOk"><span>Nilai di atas ${fmtRp(S.cfg.bigValue)}. Saya sudah mengecek ulang nominal <b>${fmtRp(tx.value)}</b>.</span></label>` : ""}
+    <div class="acts"><button class="btn ghost" data-close="no" type="button">Periksa lagi</button><button class="btn alt" data-close="ok" id="dlgOk" type="button" data-focus ${tx.big ? "disabled" : ""}>Ya, simpan</button></div>`,
+    d => { const c = d.querySelector("#bigOk"); if (c) c.addEventListener("change", () => d.querySelector("#dlgOk").disabled = !c.checked); });
+  if (!ok) return;
+  await commit({ confirmBig: tx.big });
+}
+const busyDialog = () => dialog(`<h3>Sedang diproses</h3><p>Member ini sedang diproses kasir lain, coba lagi beberapa detik.</p><div class="acts"><button class="btn" data-close="ok" type="button">Mengerti</button></div>`);
+
+async function commit(opts, adminOverride){
+  if (S.busy) return; S.busy = true;
+  const cur = S.cur;
+  try {
+    const res = await api("commit", { phone: cur.phone, outlet: curOutlet(), kasirName: S.name, value: S.form.value, redeem: S.form.redeem, confirmBig: !!opts.confirmBig, adminOverride: !!adminOverride });
+    if (!res.ok) {
+      S.busy = false;
+      if (res.code === "BUSY") return busyDialog();
+      if (res.code === "DUPLICATE") {
+        if (S.isAdmin) {
+          const go = await dialog(`<h3>Input kembar</h3><p>Transaksi dengan outlet dan nilai yang sama sudah tercatat untuk member ini kurang dari 5 menit lalu. Lanjutkan sebagai transaksi baru?</p><div class="acts"><button class="btn ghost" data-close="no" type="button" data-focus>Batal</button><button class="btn alt" data-close="ok" type="button">Ya, ini transaksi baru (admin)</button></div>`);
+          if (go) return commit(opts, true);
+        } else {
+          await dialog(`<h3>Input kembar ditolak</h3><p>Transaksi dengan outlet dan nilai yang sama sudah tercatat kurang dari 5 menit lalu. Bila memang transaksi baru, hubungi admin.</p><div class="acts"><button class="btn" data-close="ok" type="button">Mengerti</button></div>`);
+        }
+        return;
+      }
+      const msg = { INSUFFICIENT: "Saldo poin tidak cukup untuk tukar sebanyak itu.", DISCOUNT_EXCEEDS: "Potongan melebihi nilai transaksi.", NO_OUTLET: "Pilih outlet transaksi.", NO_VALUE: "Isi nilai transaksi.", NEED_BIG_CONFIRM: "Nilai besar perlu konfirmasi kedua.", NOT_MEMBER: "Nomor ini bukan member terdaftar.", NO_KASIR: "Nama kasir kosong. Keluar lalu masuk lagi." }[res.code] || "Transaksi tidak bisa disimpan.";
+      toast(msg); return;
+    }
+    cur.rows = res.rows; S.result = res; S.form = { value: 0, redeem: {} };
+    renderMember(); toast("Transaksi tersimpan");
+  } catch(e) { toast(errText(e)); }
+  finally { S.busy = false; }
+}
+
+function renderResult(){
+  const r = S.result; const cur = S.cur; const tx = r.tx;
+  const crossed = r.crossed && r.crossed.length ? `<div class="note ok"><b>Saldo sudah cukup untuk tukar ${fmtN(r.crossed[0].points)} poin</b> (potongan ${fmtRp(r.crossed[0].discount)}) di transaksi berikutnya.</div>` : "";
+  $("#txArea").innerHTML = `
+    <div class="card" style="display:grid;gap:12px">
+      <div class="note ok"><b>Transaksi tersimpan.</b> ${esc(cur.member[0])} mendapat +${fmtN(tx.earn)} poin.</div>
+      <div class="sum">
+        <div><span>Nilai transaksi</span><b>${fmtRp(tx.value)}</b></div>
+        <div><span>Potongan poin${tx.pointsUsed ? ` (${fmtN(tx.pointsUsed)} poin)` : ""}</span><b>−${fmtRp(tx.discount)}</b></div>
+        <div class="tot"><span>Bayar bersih</span><span>${fmtRp(tx.net)}</span></div>
+        <div><span>Poin didapat</span><span class="pts">+${fmtN(tx.earn)}</span></div>
+        <div class="tot"><span>Saldo baru</span><span>${fmtN(r.after)} poin</span></div>
+      </div>
+      <div class="slip">
+        <div class="slip-h">Catat di POS</div>
+        ${r.promoCode ? `<div class="code"><span>Kode promo</span><output id="promoCode">${esc(r.promoCode)}</output><button class="btn sm ghost" type="button" data-copy="${esc(r.promoCode)}">Salin</button></div>` : `<div class="hint" style="margin:0">Tidak ada tukar poin, tidak perlu kode promo.</div>`}
+        <div class="code"><span>ID member</span><output>${esc(cur.member[2] || "-")}</output>${cur.member[2] ? `<button class="btn sm ghost" type="button" data-copy="${esc(cur.member[2])}">Salin</button>` : ""}</div>
+      </div>
+      ${crossed}
+      <div class="row">
+        <button class="btn grow" id="nextBtn" type="button">Transaksi berikutnya</button>
+        <button class="btn danger grow" id="undoBtn" type="button">Salah input? Batalkan transaksi ini</button>
+      </div>
+    </div>`;
+  $("#txArea").querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => copy(b.dataset.copy, b)));
+  $("#nextBtn").addEventListener("click", () => resetAll());
+  $("#undoBtn").addEventListener("click", () => askVoid(r.txId));
+}
+function copy(text, btn){
+  const done = () => { btn.textContent = "Tersalin"; setTimeout(() => btn.textContent = "Salin", 1500); };
+  try { navigator.clipboard.writeText(text).then(done, () => toast("Salin manual: " + text)); } catch(_) { toast("Salin manual: " + text); }
+}
+function resetAll(quiet){ S.cur = null; S.result = null; $("#phone").value = ""; $("#memberArea").innerHTML = ""; $("#txArea").innerHTML = ""; $("#historyArea").innerHTML = ""; if (!quiet) $("#phone").focus(); }
+
+/* ---------- Batal ---------- */
+async function askVoid(txId, adminOverride){
+  const cur = S.cur; const t = C.transactions(cur.rows).find(x => x.txId === txId); if (!t) return;
+  const ok = adminOverride || await dialog(`<h3>Batalkan transaksi?</h3><p>${fmtRp(t.value)} di ${esc(t.outlet)}, ${esc(fmtDT(Date.parse(t.time)))}. Poin +${fmtN(t.earned)}${t.redeemed ? ` dan tukar ${fmtN(t.redeemed)} poin` : ""} akan dibatalkan.</p><div class="acts"><button class="btn ghost" data-close="no" type="button" data-focus>Jangan</button><button class="btn danger" data-close="ok" type="button">Ya, batalkan</button></div>`);
+  if (!ok || S.busy) return; S.busy = true;
+  try {
+    const res = await api("void", { phone: cur.phone, txId, outlet: curOutlet() || deviceOutlet(), kasirName: S.name, adminOverride: !!adminOverride });
+    if (!res.ok) {
+      S.busy = false;
+      if (res.code === "BUSY") return busyDialog();
+      const why = res.code === "TOO_OLD" ? "Transaksi sudah lebih dari 10 menit." : res.code === "OTHER_OUTLET" ? "Transaksi dibuat di outlet lain." : "Hanya transaksi aktif terakhir yang bisa dibatalkan.";
+      if (res.needsAdmin && S.isAdmin) {
+        const go = await dialog(`<h3>Perlu persetujuan admin</h3><p>${esc(why)} Setujui pembatalan sebagai admin?</p><div class="acts"><button class="btn ghost" data-close="no" type="button" data-focus>Jangan</button><button class="btn danger" data-close="ok" type="button">Setujui pembatalan</button></div>`);
+        if (go) return askVoid(txId, true);
+      } else {
+        await dialog(`<h3>Tidak bisa dibatalkan</h3><p>${esc(why)}${res.needsAdmin ? " Hubungi admin untuk membatalkan." : ""}</p><div class="acts"><button class="btn" data-close="ok" type="button">Mengerti</button></div>`);
+      }
+      return;
+    }
+    cur.rows = res.rows; S.result = null;
+    renderMember(); toast("Transaksi dibatalkan");
+  } catch(e) { toast(errText(e)); }
+  finally { S.busy = false; }
+}
+
+/* ---------- Riwayat ---------- */
+function kasirLabel(k){ return String(k || "").startsWith("kasir:") ? String(k).slice(6) : (k || "-"); }
+function renderHistory(){
+  const cur = S.cur; if (!cur) return;
+  const list = C.transactions(cur.rows).slice(0, 6);
+  if (!list.length) { $("#historyArea").innerHTML = `<div class="card"><h2>Riwayat</h2><div class="empty">Belum ada transaksi poin untuk member ini.</div></div>`; return; }
+  const last = C.lastActiveTx(cur.rows);
+  $("#historyArea").innerHTML = `<div class="card hist"><h2>Riwayat 6 transaksi terakhir</h2><div class="tbl-wrap"><table>
+    <thead><tr><th>Waktu</th><th>Outlet</th><th class="n">Nilai</th><th class="n">Poin</th><th class="n">Ditukar</th><th>Kasir</th><th></th></tr></thead><tbody>
+    ${list.map(t => `<tr class="${t.status === "VOID" ? "void" : ""}"><td>${esc(fmtDT(Date.parse(t.time)))}</td><td>${esc(t.outlet)}</td><td class="n">${fmtRp(t.value)}</td><td class="n">+${fmtN(t.earned)}</td><td class="n">${t.redeemed ? "−" + fmtN(t.redeemed) : "-"}</td><td>${esc(kasirLabel(t.kasir))}</td>
+      <td>${t.status === "VOID" ? `<span class="tag">dibatalkan</span>` : (last && last.txId === t.txId ? `<button class="btn sm danger" type="button" data-void="${esc(t.txId)}">Batalkan</button>` : "")}</td></tr>`).join("")}
+    </tbody></table></div></div>`;
+  $("#historyArea").querySelectorAll("[data-void]").forEach(b => b.addEventListener("click", () => askVoid(b.dataset.void)));
+}
+
+/* ---------- Admin ---------- */
+async function loadStats(){
+  $("#memberStatus").innerHTML = `<span class="spin"></span>Membaca sheet member…`;
+  try {
+    const m = await api("stats");
+    if (!m.ok) { $("#memberStatus").textContent = "Status tidak bisa dimuat."; return; }
+    $("#memberStatus").innerHTML = m.count
+      ? `<b>${fmtN(m.count)} member</b> di sheet “${esc(m.sheet)}” · ${fmtN(m.dupMerged)} nomor ganda digabung · ${fmtN(m.invalid)} baris dilewati<div class="chips" style="margin-top:8px">${Object.entries(m.byCabang || {}).sort((a,b) => b[1]-a[1]).map(([k,v]) => `<span class="chip">${esc(k)} ${fmtN(v)}</span>`).join("")}</div>`
+      : `Belum ada data member yang terbaca. Pastikan sheet member punya kolom <b>customername</b> dan <b>phone</b> di 6 baris pertama.`;
+  } catch(e) { $("#memberStatus").textContent = errText(e); }
+}
+let repState = null;
+async function runReport(){
+  const month = $("#repMonth").value; if (!month) return;
+  $("#repOut").innerHTML = `<div class="note info"><span class="spin"></span>Menghitung rekap…</div>`;
+  try {
+    const r = await api("report", { month });
+    if (!r.ok) { $("#repOut").innerHTML = `<div class="note warn">Rekap tidak bisa dihitung.</div>`; return; }
+    repState = r; drawReport();
+  } catch(e) { $("#repOut").innerHTML = `<div class="note warn">${esc(errText(e))}</div>`; }
+}
+function drawReport(){
+  const { month, report: r } = repState;
+  const pct = v => v == null ? "-" : (v * 100).toLocaleString("id-ID", {maximumFractionDigits:1}) + "%";
+  const line = (o, total) => `<tr${total ? ' style="font-weight:800"' : ""}><td>${esc(o.outlet)}</td><td class="n">${fmtN(o.tx)}</td><td class="n">${fmtN(o.members)}</td><td class="n">${fmtN(o.pointsIn)}</td><td class="n">${fmtN(o.pointsRedeemed)}</td><td class="n">${fmtN(o.pointsExpired)}</td><td class="n">${fmtRp(o.discount)}</td><td class="n">${fmtRp(o.memberSales)}</td>
+    <td class="n">${total ? fmtRp(o.outletSales) : `<input data-sales="${esc(o.outlet)}" inputmode="numeric" style="min-height:40px;padding:6px 8px;width:140px;text-align:right" value="${o.outletSales ? fmtN(o.outletSales) : ""}" placeholder="isi manual" aria-label="Total penjualan ${esc(o.outlet)}">`}</td>
+    <td class="n">${pct(o.share)}</td><td class="n">${pct(o.discountPct)}</td></tr>`;
+  $("#repOut").innerHTML = `<div class="hint" style="margin-top:0">${esc(fmtMonth(month))} · penjualan member = nilai bayar bersih</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Outlet</th><th class="n">Transaksi member</th><th class="n">Member aktif</th><th class="n">Poin masuk</th><th class="n">Poin ditukar</th><th class="n">Poin hangus</th><th class="n">Potongan</th><th class="n">Penjualan member</th><th class="n">Total penjualan outlet</th><th class="n">Porsi member</th><th class="n">Potongan / penj. member</th></tr></thead>
+    <tbody>${r.rows.map(o => line(o)).join("")}${line(r.total, true)}</tbody></table></div>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" id="salesSave" type="button">Simpan total penjualan outlet</button></div>`;
+  $("#repOut").querySelectorAll("[data-sales]").forEach(i => i.addEventListener("input", () => { const v = Number(i.value.replace(/\D/g, "")) || 0; i.value = v ? fmtN(v) : ""; }));
+  $("#salesSave").addEventListener("click", saveSales);
+}
+async function saveSales(){
+  const sales = {};
+  $("#repOut").querySelectorAll("[data-sales]").forEach(i => { const v = Number(i.value.replace(/\D/g, "")) || 0; if (v) sales[i.dataset.sales] = v; });
+  try { const r = await api("setSales", { month: repState.month, sales }); if (!r.ok) return toast("Gagal menyimpan"); toast("Total penjualan tersimpan"); runReport(); }
+  catch(e) { toast(errText(e)); }
+}
+async function downloadLedger(){
+  const btn = $("#dlBtn"); btn.disabled = true;
+  try {
+    const r = await api("csv");
+    if (!r.ok) return toast("Ledger tidak bisa diunduh");
+    const blob = new Blob(["﻿" + r.csv], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "snapy-ledger-" + new Date().toLocaleDateString("sv-SE", {timeZone:TZ}) + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    window.__lastCsv = r.csv;
+    toast("File ledger diunduh");
+  } catch(e) { toast(errText(e)); }
+  finally { btn.disabled = false; }
+}
+
+/* ---------- Event ---------- */
+function showTab(name){
+  $("#tabKasir").hidden = name !== "kasir"; $("#tabAdmin").hidden = name !== "admin";
+  $("#tabBtnKasir").setAttribute("aria-selected", name === "kasir"); $("#tabBtnAdmin").setAttribute("aria-selected", name === "admin");
+  if (name === "admin") loadStats(); else $("#phone").focus();
+}
+$("#tabBtnKasir").addEventListener("click", () => showTab("kasir"));
+$("#tabBtnAdmin").addEventListener("click", () => { if (S.isAdmin) showTab("admin"); });
+$("#loginBtn").addEventListener("click", login);
+$("#loginPin").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); login(); } });
+$("#loginName").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("#loginPin").focus(); } });
+$("#logoutBtn").addEventListener("click", async () => { const ok = await dialog(`<h3>Keluar?</h3><p>PIN perlu dimasukkan lagi di perangkat ini.</p><div class="acts"><button class="btn ghost" data-close="no" type="button" data-focus>Batal</button><button class="btn" data-close="ok" type="button">Keluar</button></div>`); if (ok) logout(); });
+$("#cekBtn").addEventListener("click", lookup);
+$("#phone").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); lookup(); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#modal").hidden && !$("#tabKasir").hidden) resetAll(); });
+$("#statsBtn").addEventListener("click", loadStats);
+$("#repBtn").addEventListener("click", runReport);
+$("#dlBtn").addEventListener("click", downloadLedger);
+$("#modal").addEventListener("click", e => { if (e.target.id === "modal") { const n = $("#dialog").querySelector('[data-close="no"]'); if (n) n.click(); } });
+
+boot();
+})();
 </script>
 </body>
 </html>

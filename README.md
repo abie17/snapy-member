@@ -1,11 +1,11 @@
-# SNAPY Member Checker
+# Snapy Member Poin
 
-Halaman cek member untuk kasir outlet SNAPY Taman Palem & PIK.
+Alat kasir program poin member Snapy (Cinere, Taman Palem, GSB2, PIK, Tomang).
 
-- `index.html` — halaman kasir (tidak berisi data member).
-- `Code.gs` — script untuk Google Sheet data member (dipasang lewat Extensions > Apps Script).
+- `index.html` — halaman kasir & admin (GitHub Pages). Tidak berisi data member.
+- `Code.gs` — Apps Script untuk Google Sheet data member. Menyimpan transaksi poin di tab
+  **Ledger** dan total penjualan outlet di tab **Rekap** (dibuat otomatis).
 
-Data member disimpan di Google Sheet milik pemilik (private). Halaman hanya bisa mencari
-satu nomor HP per pencarian, dan harus memakai PIN kasir.
+PIN kasir & admin hanya diisi di Apps Script (private), tidak pernah di repository ini.
 
 **Jangan pernah upload file Excel/CSV data member ke repository ini.**
