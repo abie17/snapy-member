@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SNAPY Member Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f1ea; --card:#ffffff; --ink:#1b1a17; --muted:#6f6a60; --line:#e3ddd0;
+  --accent:#e4572e; --accent-ink:#fff; --ok:#1f8a5b; --ok-bg:#e6f4ec; --warn:#b4471f; --warn-bg:#fbe9e2;
+  --tp:#2c6e9b; --tp-bg:#e3eef6; --pik:#7a4fb0; --pik-bg:#efe7f8;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(40,30,10,.06);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15140f; --card:#1f1d18; --ink:#f1ede4; --muted:#a39d90; --line:#34312a;
+  --accent:#ff6b42; --ok:#5fd09a; --ok-bg:#163326; --warn:#ff9a76; --warn-bg:#3a1f15;
+  --tp:#7cb8e2; --tp-bg:#18303f; --pik:#c4a2ef; --pik-bg:#2c1f3d; --shadow:none;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:28px 16px 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:10px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:18px}
+.brand b{display:block;font-size:17px;letter-spacing:.02em}
+.brand span{font-size:12.5px;color:var(--muted)}
+.outlets{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px}
+.pill.tp{background:var(--tp-bg);color:var(--tp)} .pill.pik{background:var(--pik-bg);color:var(--pik)}
+
+.search{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
+.search label{display:block;font-weight:700;font-size:15px;margin-bottom:4px}
+.search p{margin:0 0 14px;color:var(--muted);font-size:13.5px}
+.row{display:flex;gap:10px}
+.field{flex:1;display:flex;align-items:center;border:2px solid var(--line);border-radius:12px;background:var(--bg);transition:border-color .15s}
+.field:focus-within{border-color:var(--accent)}
+.field svg{margin-left:14px;flex:none;color:var(--muted)}
+.field input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:600 22px "JetBrains Mono",monospace;letter-spacing:.04em;padding:14px 12px;outline:none}
+.field input::placeholder{color:var(--muted);opacity:.55;font-weight:500}
+.btn{border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);font:700 16px inherit;font-family:inherit;padding:0 22px;cursor:pointer}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:600;font-size:13px;padding:8px 12px}
+.hint{margin-top:10px;font-size:12px;color:var(--muted)}
+kbd{font-family:"JetBrains Mono",monospace;font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 5px}
+
+#result{margin-top:20px}
+.status{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;font-weight:700;font-size:15px;margin-bottom:12px}
+.status.ok{background:var(--ok-bg);color:var(--ok)} .status.no{background:var(--warn-bg);color:var(--warn)}
+.status small{font-weight:500;opacity:.85}
+.member{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow);margin-bottom:12px;}
+.mtop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+.mname{font-size:24px;font-weight:800;line-height:1.2;margin:0}
+.mcode{font:500 12.5px "JetBrains Mono",monospace;color:var(--muted);margin-top:4px}
+.badge{flex:none;font-size:13px;font-weight:700;padding:7px 12px;border-radius:10px;white-space:nowrap}
+.badge.tp{background:var(--tp-bg);color:var(--tp)} .badge.pik{background:var(--pik-bg);color:var(--pik)} .badge.other{background:var(--line);color:var(--muted)}
+dl{margin:0;display:grid;grid-template-columns:130px 1fr;row-gap:12px;column-gap:16px;border-top:1px dashed var(--line);padding-top:16px}
+dt{color:var(--muted);font-size:13px;font-weight:600;padding-top:2px}
+dd{margin:0;font-size:15.5px;line-height:1.45}
+dd.phone{font:600 18px "JetBrains Mono",monospace;letter-spacing:.03em}
+.empty{text-align:center;color:var(--muted);padding:36px 16px;font-size:14px}
+.empty svg{opacity:.5;margin-bottom:8px}
+
+footer{margin-top:28px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+#file{display:none}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:13.5px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (max-width:520px){
+  .row{flex-direction:column} .btn{padding:14px} .field input{font-size:19px}
+  dl{grid-template-columns:1fr;row-gap:4px} dd{margin-bottom:10px}
+  .mtop{flex-direction:column} header{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">S</div>
+      <div><b>SNAPY Member Checker</b><span>Promo khusus member outlet kami</span></div>
+    </div>
+    <div class="outlets"><span class="pill tp">Taman Palem</span><span class="pill pik">PIK</span></div>
+  </header>
+
+  <div class="search" id="form">
+    <label for="q">Nomor HP member</label>
+    <p>Ketik nomor yang disebutkan customer. Format 08…, 8…, 62… atau +62… semuanya bisa.</p>
+    <div class="row">
+      <div class="field">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>
+        <input id="q" type="tel" inputmode="tel" placeholder="0812 xxxx xxxx" autocomplete="off" autofocus>
+      </div>
+      <button class="btn" type="button" id="cekBtn">Cek Member</button>
+    </div>
+    <div class="hint"><kbd>Enter</kbd> untuk cek &nbsp;·&nbsp; <kbd>Esc</kbd> untuk kosongkan</div>
+  </div>
+
+  <div id="result">
+    <div class="empty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      <div>Data member akan tampil di sini.</div>
+    </div>
+  </div>
+
+  <footer>
+    <span id="meta"></span>
+    <span>
+      <button class="btn ghost" type="button" id="clearBtn">Hapus data</button>
+      <button class="btn ghost" type="button" id="importBtn">Upload data member (Excel)</button>
+      <input type="file" id="file" accept=".xlsx,.xls,.csv">
+    </span>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// Versi GitHub: TIDAK ada data member di file ini. Data di-upload kasir dari Excel
+// dan disimpan hanya di browser perangkat kasir (localStorage).
+const KEY = "snapy_members_v1";
+let MEMBERS = [], SOURCE = "";
+try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && Array.isArray(s.list)) { MEMBERS = s.list; SOURCE = s.source || ""; } } catch(_) {}
+function saveLocal(){ try { localStorage.setItem(KEY, JSON.stringify({list: MEMBERS, source: SOURCE, at: Date.now()})); return true; } catch(_) { return false; } }
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// Samakan semua format nomor jadi 08xxxx
+function norm(v){
+  let d = String(v ?? "").replace(/\D/g, "");
+  if (d.startsWith("62")) d = d.slice(2);
+  d = d.replace(/^0+/, "");
+  return d ? "0" + d : "";
+}
+function pretty(p){ // 0812-3456-7890
+  return p.replace(/^(\d{4})(\d{4})(\d+)$/, "$1-$2-$3");
+}
+function outletClass(o){
+  const s = o.toLowerCase();
+  if (s.includes("palem") || s.includes("palen")) return "tp";
+  if (s.includes("pik")) return "pik";
+  return "other";
+}
+function fmtDate(iso){
+  if (!iso) return "-";
+  const d = new Date(iso + "T00:00:00");
+  return isNaN(d) ? iso : d.toLocaleDateString("id-ID", {day:"numeric", month:"long", year:"numeric"});
+}
+function address(a){ return a.filter(Boolean).join(", ") || "-"; }
+
+function card(m){
+  const oc = outletClass(m.o);
+  return `<article class="member">
+    <div class="mtop">
+      <div><h2 class="mname">${esc(m.n)}</h2><div class="mcode">${esc(m.k)}</div></div>
+      <span class="badge ${oc}">Outlet ${esc(m.o || "-")}</span>
+    </div>
+    <dl>
+      <dt>Outlet</dt><dd>${esc(m.o || "-")}</dd>
+      <dt>Nama</dt><dd>${esc(m.n)}</dd>
+      <dt>Nomor HP</dt><dd class="phone">${esc(pretty(m.p))}</dd>
+      <dt>Alamat</dt><dd>${esc(address(m.a))}</dd>
+      <dt>Member sejak</dt><dd>${esc(fmtDate(m.j))}</dd>
+    </dl>
+  </article>`;
+}
+
+function search(){
+  const raw = $("#q").value.trim();
+  const q = norm(raw);
+  const box = $("#result");
+  if (!MEMBERS.length){ box.innerHTML = noDataMsg(); return; }
+  if (!q){ $("#q").focus(); return; }
+  if (q.length < 9){
+    box.innerHTML = `<div class="status no">Nomor terlalu pendek <small>— minimal 9 digit</small></div>`;
+    return;
+  }
+  const hits = MEMBERS.filter(m => m.p === q);
+  if (hits.length){
+    box.innerHTML = `<div class="status ok">✓ Member terdaftar <small>— berhak dapat promo</small></div>` + hits.map(card).join("");
+  } else {
+    box.innerHTML = `<div class="status no">✕ Nomor ${esc(pretty(q))} tidak terdaftar <small>— bukan member Taman Palem / PIK</small></div>`;
+  }
+}
+
+$("#cekBtn").addEventListener("click", search);
+$("#q").addEventListener("keydown", e => {
+  if (e.key === "Enter" || e.keyCode === 13){ e.preventDefault(); search(); }
+});
+// Cari otomatis saat nomor sudah lengkap & cocok
+$("#q").addEventListener("input", () => {
+  const q = norm($("#q").value);
+  if (q.length >= 10 && MEMBERS.some(m => m.p === q)) search();
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape"){ $("#q").value = ""; $("#result").innerHTML = ""; $("#q").focus(); }
+});
+
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
+function noDataMsg(){
+  return `<div class="status no">Belum ada data member di perangkat ini <small>— klik "Upload data member (Excel)" di bawah</small></div>`;
+}
+function updateMeta(){
+  if (!MEMBERS.length){ $("#meta").textContent = "Belum ada data member di perangkat ini"; $("#clearBtn").style.display="none"; return; }
+  $("#clearBtn").style.display="";
+  const tp = MEMBERS.filter(m=>outletClass(m.o)==="tp").length;
+  const pik = MEMBERS.filter(m=>outletClass(m.o)==="pik").length;
+  $("#meta").textContent = `${MEMBERS.length} member · Taman Palem ${tp} · PIK ${pik} · sumber: ${SOURCE}`;
+}
+updateMeta();
+if (!MEMBERS.length) $("#result").innerHTML = noDataMsg();
+$("#clearBtn").addEventListener("click", () => {
+  if (!confirm("Hapus data member dari perangkat ini?")) return;
+  MEMBERS = []; SOURCE = ""; try { localStorage.removeItem(KEY); } catch(_) {}
+  updateMeta(); $("#result").innerHTML = noDataMsg(); toast("Data member dihapus dari perangkat ini");
+});
+
+function loadXLSX(){
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, fail) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = ok; s.onerror = fail; document.head.appendChild(s);
+  });
+}
+// Update data: upload export Excel dari pusat (kolom Outlet, customercode, customername, phone, address1-3, joindate)
+$("#importBtn").addEventListener("click", () => $("#file").click());
+$("#file").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { await loadXLSX(); } catch(_) { toast("Butuh koneksi internet untuk membaca Excel"); e.target.value=""; return; }
+  try{
+    const wb = XLSX.read(await f.arrayBuffer(), {cellDates:true});
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:""});
+    const clean = v => { const s = String(v ?? "").trim(); return (s === "-" ? "" : s); };
+    const list = rows.map(r => {
+      const jd = r.joindate instanceof Date ? r.joindate : null;
+      return {
+        o: clean(r.Outlet ?? r.outlet), k: clean(r.customercode), n: clean(r.customername),
+        p: norm(r.phone),
+        a: [clean(r.address1), clean(r.address2), clean(r.address3)],
+        j: jd ? `${jd.getFullYear()}-${String(jd.getMonth()+1).padStart(2,"0")}-${String(jd.getDate()).padStart(2,"0")}` : ""
+      };
+    }).filter(m => m.p && m.n);
+    if (!list.length){ toast("Kolom phone / customername tidak ditemukan"); return; }
+    MEMBERS = list; SOURCE = f.name; const saved = saveLocal(); updateMeta();
+if (!MEMBERS.length) $("#result").innerHTML = noDataMsg();
+$("#clearBtn").addEventListener("click", () => {
+  if (!confirm("Hapus data member dari perangkat ini?")) return;
+  MEMBERS = []; SOURCE = ""; try { localStorage.removeItem(KEY); } catch(_) {}
+  updateMeta(); $("#result").innerHTML = noDataMsg(); toast("Data member dihapus dari perangkat ini");
+});
+    $("#result").innerHTML = ""; $("#q").focus();
+    toast(`${list.length} member berhasil dimuat` + (saved ? " & tersimpan di perangkat ini" : " (tidak tersimpan, upload ulang jika halaman ditutup)"));
+  }catch(err){ toast("Gagal membaca file: " + err.message); }
+  e.target.value = "";
+});
+</script>
+</body>
+</html>
