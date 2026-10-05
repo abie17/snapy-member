@@ -71,6 +71,14 @@ footer{margin-top:28px;display:flex;justify-content:space-between;align-items:ce
   dl{grid-template-columns:1fr;row-gap:4px} dd{margin-bottom:10px}
   .mtop{flex-direction:column} header{flex-direction:column;align-items:flex-start}
 }
+.pin{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
+.pin label{display:block;font-weight:700;font-size:15px;margin-bottom:4px}
+.pin p{margin:0 0 14px;color:var(--muted);font-size:13.5px}
+.pin .err{color:var(--warn);font-size:13px;font-weight:600;margin-top:10px;min-height:1em}
+.hidden{display:none!important}
+.loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:600;padding:12px 4px}
+.spin{width:18px;height:18px;border:2.5px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -83,60 +91,64 @@ footer{margin-top:28px;display:flex;justify-content:space-between;align-items:ce
     <div class="outlets"><span class="pill tp">Taman Palem</span><span class="pill pik">PIK</span></div>
   </header>
 
-  <div class="search" id="form">
+  <div class="pin hidden" id="pinBox">
+    <label for="pin">PIN kasir</label>
+    <p>Masukkan PIN sekali di perangkat ini. Setelah itu kasir cukup ketik nomor HP member.</p>
+    <div class="row">
+      <div class="field">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <input id="pin" type="password" inputmode="numeric" placeholder="••••••" autocomplete="off">
+      </div>
+      <button class="btn" type="button" id="pinBtn">Masuk</button>
+    </div>
+    <div class="err" id="pinErr"></div>
+  </div>
+
+  <div class="search hidden" id="form">
     <label for="q">Nomor HP member</label>
     <p>Ketik nomor yang disebutkan customer. Format 08…, 8…, 62… atau +62… semuanya bisa.</p>
     <div class="row">
       <div class="field">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>
-        <input id="q" type="tel" inputmode="tel" placeholder="0812 xxxx xxxx" autocomplete="off" autofocus>
+        <input id="q" type="tel" inputmode="tel" placeholder="0812 xxxx xxxx" autocomplete="off">
       </div>
       <button class="btn" type="button" id="cekBtn">Cek Member</button>
     </div>
     <div class="hint"><kbd>Enter</kbd> untuk cek &nbsp;·&nbsp; <kbd>Esc</kbd> untuk kosongkan</div>
   </div>
 
-  <div id="result">
-    <div class="empty">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
-      <div>Data member akan tampil di sini.</div>
-    </div>
-  </div>
+  <div id="result"></div>
 
   <footer>
     <span id="meta"></span>
-    <span>
-      <button class="btn ghost" type="button" id="clearBtn">Hapus data</button>
-      <button class="btn ghost" type="button" id="importBtn">Upload data member (Excel)</button>
-      <input type="file" id="file" accept=".xlsx,.xls,.csv">
-    </span>
+    <button class="btn ghost hidden" type="button" id="logoutBtn">Keluar / ganti PIN</button>
   </footer>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-// Versi GitHub: TIDAK ada data member di file ini. Data di-upload kasir dari Excel
-// dan disimpan hanya di browser perangkat kasir (localStorage).
-const KEY = "snapy_members_v1";
-let MEMBERS = [], SOURCE = "";
-try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && Array.isArray(s.list)) { MEMBERS = s.list; SOURCE = s.source || ""; } } catch(_) {}
-function saveLocal(){ try { localStorage.setItem(KEY, JSON.stringify({list: MEMBERS, source: SOURCE, at: Date.now()})); return true; } catch(_) { return false; } }
+// ====== PENGATURAN ======
+// Isi dengan URL Web App dari Google Apps Script (berakhiran /exec)
+const API_URL = "";
+// ========================
+// Halaman ini TIDAK berisi data member. Data diambil satu per satu dari Google Sheet
+// (private) lewat Apps Script, dan hanya bisa diakses dengan PIN kasir.
 
+const PIN_KEY = "snapy_pin_v1";
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let PIN = "";
+try { PIN = localStorage.getItem(PIN_KEY) || ""; } catch(_) {}
 
-// Samakan semua format nomor jadi 08xxxx
 function norm(v){
   let d = String(v ?? "").replace(/\D/g, "");
   if (d.startsWith("62")) d = d.slice(2);
   d = d.replace(/^0+/, "");
   return d ? "0" + d : "";
 }
-function pretty(p){ // 0812-3456-7890
-  return p.replace(/^(\d{4})(\d{4})(\d+)$/, "$1-$2-$3");
-}
+function pretty(p){ return String(p).replace(/^(\d{4})(\d{4})(\d+)$/, "$1-$2-$3"); }
 function outletClass(o){
-  const s = o.toLowerCase();
+  const s = String(o || "").toLowerCase();
   if (s.includes("palem") || s.includes("palen")) return "tp";
   if (s.includes("pik")) return "pik";
   return "other";
@@ -146,7 +158,8 @@ function fmtDate(iso){
   const d = new Date(iso + "T00:00:00");
   return isNaN(d) ? iso : d.toLocaleDateString("id-ID", {day:"numeric", month:"long", year:"numeric"});
 }
-function address(a){ return a.filter(Boolean).join(", ") || "-"; }
+function address(a){ return (a || []).filter(Boolean).join(", ") || "-"; }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
 
 function card(m){
   const oc = outletClass(m.o);
@@ -165,95 +178,82 @@ function card(m){
   </article>`;
 }
 
-function search(){
-  const raw = $("#q").value.trim();
-  const q = norm(raw);
-  const box = $("#result");
-  if (!MEMBERS.length){ box.innerHTML = noDataMsg(); return; }
-  if (!q){ $("#q").focus(); return; }
-  if (q.length < 9){
-    box.innerHTML = `<div class="status no">Nomor terlalu pendek <small>— minimal 9 digit</small></div>`;
-    return;
-  }
-  const hits = MEMBERS.filter(m => m.p === q);
-  if (hits.length){
-    box.innerHTML = `<div class="status ok">✓ Member terdaftar <small>— berhak dapat promo</small></div>` + hits.map(card).join("");
-  } else {
-    box.innerHTML = `<div class="status no">✕ Nomor ${esc(pretty(q))} tidak terdaftar <small>— bukan member Taman Palem / PIK</small></div>`;
-  }
+async function api(params){
+  const url = API_URL + "?" + new URLSearchParams(params).toString();
+  const r = await fetch(url, {method:"GET", redirect:"follow"});
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
 }
 
-$("#cekBtn").addEventListener("click", search);
-$("#q").addEventListener("keydown", e => {
-  if (e.key === "Enter" || e.keyCode === 13){ e.preventDefault(); search(); }
-});
-// Cari otomatis saat nomor sudah lengkap & cocok
-$("#q").addEventListener("input", () => {
-  const q = norm($("#q").value);
-  if (q.length >= 10 && MEMBERS.some(m => m.p === q)) search();
-});
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape"){ $("#q").value = ""; $("#result").innerHTML = ""; $("#q").focus(); }
-});
+function showPin(msg){
+  $("#pinBox").classList.remove("hidden"); $("#form").classList.add("hidden");
+  $("#logoutBtn").classList.add("hidden"); $("#result").innerHTML = "";
+  $("#pinErr").textContent = msg || ""; $("#pin").value = ""; $("#pin").focus();
+  $("#meta").textContent = "";
+}
+function showSearch(){
+  $("#pinBox").classList.add("hidden"); $("#form").classList.remove("hidden");
+  $("#logoutBtn").classList.remove("hidden");
+  $("#meta").textContent = "Terhubung ke data member (Google Sheet)";
+  $("#result").innerHTML = `<div class="empty"><div>Data member akan tampil di sini.</div></div>`;
+  $("#q").focus();
+}
 
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
-function noDataMsg(){
-  return `<div class="status no">Belum ada data member di perangkat ini <small>— klik "Upload data member (Excel)" di bawah</small></div>`;
-}
-function updateMeta(){
-  if (!MEMBERS.length){ $("#meta").textContent = "Belum ada data member di perangkat ini"; $("#clearBtn").style.display="none"; return; }
-  $("#clearBtn").style.display="";
-  const tp = MEMBERS.filter(m=>outletClass(m.o)==="tp").length;
-  const pik = MEMBERS.filter(m=>outletClass(m.o)==="pik").length;
-  $("#meta").textContent = `${MEMBERS.length} member · Taman Palem ${tp} · PIK ${pik} · sumber: ${SOURCE}`;
-}
-updateMeta();
-if (!MEMBERS.length) $("#result").innerHTML = noDataMsg();
-$("#clearBtn").addEventListener("click", () => {
-  if (!confirm("Hapus data member dari perangkat ini?")) return;
-  MEMBERS = []; SOURCE = ""; try { localStorage.removeItem(KEY); } catch(_) {}
-  updateMeta(); $("#result").innerHTML = noDataMsg(); toast("Data member dihapus dari perangkat ini");
-});
-
-function loadXLSX(){
-  if (window.XLSX) return Promise.resolve();
-  return new Promise((ok, fail) => {
-    const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
-    s.onload = ok; s.onerror = fail; document.head.appendChild(s);
-  });
-}
-// Update data: upload export Excel dari pusat (kolom Outlet, customercode, customername, phone, address1-3, joindate)
-$("#importBtn").addEventListener("click", () => $("#file").click());
-$("#file").addEventListener("change", async e => {
-  const f = e.target.files[0]; if (!f) return;
-  try { await loadXLSX(); } catch(_) { toast("Butuh koneksi internet untuk membaca Excel"); e.target.value=""; return; }
+async function login(){
+  const pin = $("#pin").value.trim();
+  if (!pin){ $("#pin").focus(); return; }
+  $("#pinErr").textContent = "Memeriksa PIN…";
   try{
-    const wb = XLSX.read(await f.arrayBuffer(), {cellDates:true});
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:""});
-    const clean = v => { const s = String(v ?? "").trim(); return (s === "-" ? "" : s); };
-    const list = rows.map(r => {
-      const jd = r.joindate instanceof Date ? r.joindate : null;
-      return {
-        o: clean(r.Outlet ?? r.outlet), k: clean(r.customercode), n: clean(r.customername),
-        p: norm(r.phone),
-        a: [clean(r.address1), clean(r.address2), clean(r.address3)],
-        j: jd ? `${jd.getFullYear()}-${String(jd.getMonth()+1).padStart(2,"0")}-${String(jd.getDate()).padStart(2,"0")}` : ""
-      };
-    }).filter(m => m.p && m.n);
-    if (!list.length){ toast("Kolom phone / customername tidak ditemukan"); return; }
-    MEMBERS = list; SOURCE = f.name; const saved = saveLocal(); updateMeta();
-if (!MEMBERS.length) $("#result").innerHTML = noDataMsg();
-$("#clearBtn").addEventListener("click", () => {
-  if (!confirm("Hapus data member dari perangkat ini?")) return;
-  MEMBERS = []; SOURCE = ""; try { localStorage.removeItem(KEY); } catch(_) {}
-  updateMeta(); $("#result").innerHTML = noDataMsg(); toast("Data member dihapus dari perangkat ini");
+    const res = await api({action:"ping", pin});
+    if (res.ok){
+      PIN = pin; try { localStorage.setItem(PIN_KEY, pin); } catch(_) {}
+      showSearch(); toast("PIN benar, siap dipakai");
+    } else {
+      $("#pinErr").textContent = res.error || "PIN salah";
+    }
+  }catch(err){ $("#pinErr").textContent = "Tidak bisa terhubung ke server. Cek koneksi internet."; }
+}
+
+let busy = false;
+async function search(){
+  if (busy) return;
+  const q = norm($("#q").value);
+  const box = $("#result");
+  if (!q){ $("#q").focus(); return; }
+  if (q.length < 9){ box.innerHTML = `<div class="status no">Nomor terlalu pendek <small>— minimal 9 digit</small></div>`; return; }
+  busy = true;
+  box.innerHTML = `<div class="loading"><div class="spin"></div>Mencari member…</div>`;
+  try{
+    const res = await api({action:"find", pin:PIN, phone:q});
+    if (!res.ok){
+      if (res.code === "PIN"){ try{localStorage.removeItem(PIN_KEY);}catch(_){}; PIN=""; showPin("PIN sudah tidak berlaku, masukkan PIN baru."); }
+      else box.innerHTML = `<div class="status no">${esc(res.error || "Terjadi kesalahan")}</div>`;
+    } else if (res.members && res.members.length){
+      box.innerHTML = `<div class="status ok">✓ Member terdaftar <small>— berhak dapat promo</small></div>` + res.members.map(card).join("");
+    } else {
+      box.innerHTML = `<div class="status no">✕ Nomor ${esc(pretty(q))} tidak terdaftar <small>— bukan member Taman Palem / PIK</small></div>`;
+    }
+  }catch(err){
+    box.innerHTML = `<div class="status no">Tidak bisa terhubung ke server <small>— cek koneksi internet, lalu coba lagi</small></div>`;
+  }
+  busy = false;
+}
+
+$("#pinBtn").addEventListener("click", login);
+$("#pin").addEventListener("keydown", e => { if (e.key === "Enter" || e.keyCode === 13){ e.preventDefault(); login(); } });
+$("#cekBtn").addEventListener("click", search);
+$("#q").addEventListener("keydown", e => { if (e.key === "Enter" || e.keyCode === 13){ e.preventDefault(); search(); } });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !$("#form").classList.contains("hidden")){ $("#q").value = ""; $("#result").innerHTML = ""; $("#q").focus(); }
 });
-    $("#result").innerHTML = ""; $("#q").focus();
-    toast(`${list.length} member berhasil dimuat` + (saved ? " & tersimpan di perangkat ini" : " (tidak tersimpan, upload ulang jika halaman ditutup)"));
-  }catch(err){ toast("Gagal membaca file: " + err.message); }
-  e.target.value = "";
+$("#logoutBtn").addEventListener("click", () => {
+  if (!confirm("Keluar dari perangkat ini? PIN perlu dimasukkan lagi.")) return;
+  try{localStorage.removeItem(PIN_KEY);}catch(_){}; PIN=""; showPin();
 });
+
+if (!API_URL){
+  $("#result").innerHTML = `<div class="status no">Halaman belum terhubung ke Google Sheet <small>— isi API_URL di index.html</small></div>`;
+} else if (PIN){ showSearch(); } else { showPin(); }
 </script>
 </body>
 </html>
